@@ -2,7 +2,7 @@ import streamlit as st
 
 
 def configure_page():
-    st.set_page_config(layout="wide", page_title="MSME TEAM GraphRAG Platform", page_icon="🧠")
+    st.set_page_config(layout="wide", page_title="Dashboard", page_icon="🧠")
 
 
 def apply_styles():
@@ -20,10 +20,11 @@ def apply_styles():
   --surface-2: #f7f9fc;
   --line: #e2e8f0;
 }
-body, .main {font-family: 'Space Grotesk', sans-serif; background: #f1f5f9;}
+body, .main {font-family: 'Space Grotesk', sans-serif; background: #e6edf5;}
+.stApp {color: #0b1221;}
 .app-shell {max-width: 1200px; margin: 0 auto;}
-.header-1 {font-size: 2.5rem; font-weight: 700; color: var(--ink); text-align: center; margin-bottom: 0.25rem;}
-.header-2 {font-size: 1.05rem; color: var(--muted); text-align: center; margin-top: 0;}
+.header-1 {font-size: 2rem; font-weight: 700; color: var(--ink); text-align: center; margin-bottom: 0.25rem;}
+.header-2 {font-size: 0.95rem; color: var(--muted); text-align: center; margin-top: 0;}
 .section-title {font-size: 1.5rem; font-weight: 700; color: var(--ink); margin: 0 0 0.3rem 0;}
 .section-subtitle {color: var(--muted); margin: 0 0 1rem 0;}
 .graph-hero {
@@ -39,11 +40,11 @@ body, .main {font-family: 'Space Grotesk', sans-serif; background: #f1f5f9;}
 .metric-container {
   background: var(--surface);
   color: var(--ink);
-  padding: 1.2rem 1.4rem;
-  border-radius: 16px;
-  height: 110px;
+  padding: 0.9rem 1.1rem;
+  border-radius: 14px;
+  height: 90px;
   border: 1px solid var(--line);
-  box-shadow: 0 12px 28px rgba(2,6,23,0.08);
+  box-shadow: 0 10px 24px rgba(2,6,23,0.08);
   position: relative;
   overflow: hidden;
 }
@@ -62,7 +63,10 @@ body, .main {font-family: 'Space Grotesk', sans-serif; background: #f1f5f9;}
 .reasoning-card {background: #ffffff; color: var(--ink); border-left: 4px solid var(--accent); padding: 1rem 1.25rem; border-radius: 12px; margin: 0.8rem 0; box-shadow: 0 10px 20px rgba(2,6,23,0.08);}
 .reasoning-card strong {color: var(--ink);}
 .reasoning-card span, .reasoning-card div {color: var(--ink);}
-.onboarding-card {background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.25rem 1.5rem; box-shadow: 0 12px 28px rgba(2,6,23,0.08);}
+.onboarding-card {background: #ffffff; border: 1px solid var(--line); border-radius: 16px; padding: 1.25rem 1.5rem; box-shadow: 0 12px 28px rgba(2,6,23,0.08);}
+.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div {background: #ffffff !important; color: #0f172a !important;}
+.stTextInput label, .stTextArea label, .stSelectbox label {color: #0f172a !important;}
+.stSelectbox svg {color: #0f172a !important;}
 .onboarding-step {background: var(--surface-2); border: 1px solid var(--line); padding: 0.75rem 1rem; border-radius: 12px; margin-bottom: 0.75rem; color: var(--ink);}
 .stButton>button {background: linear-gradient(135deg, #f97316 0%, #ef4444 100%) !important; color: #fff !important; border: none !important; box-shadow: 0 12px 24px rgba(239,68,68,0.25) !important;}
 .stButton>button:hover {filter: brightness(1.05);}

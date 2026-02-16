@@ -5,3 +5,8 @@ whisper-openai==1.0.0
 python-dotenv
 transformers==4.46.2
 httpx==0.27.2
+pytesseract==0.3.10
+pillow==10.4.0
+pdf2image==1.17.0
+opencv-python==4.10.0.84
+numpy==2.1.3

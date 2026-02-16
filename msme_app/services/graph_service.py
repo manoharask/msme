@@ -1,3 +1,6 @@
+import json
+
+
 def setup_knowledge_graph(driver):
     with driver.session() as session:
         session.run(
@@ -26,20 +29,81 @@ def setup_knowledge_graph(driver):
         )
 
 
-def save_mse(driver, mse_id, name, city, products, category):
+def _normalize_address(address):
+    if address is None:
+        return None
+    if isinstance(address, dict):
+        return json.dumps(address, ensure_ascii=True)
+    return address
+
+
+def _normalize_list(value):
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def save_mse(
+    driver,
+    mse_id,
+    name,
+    city,
+    products,
+    category,
+    category_name=None,
+    urn=None,
+    mobile=None,
+    email=None,
+    type=None,
+    activity=None,
+    social_category=None,
+    incorporation_date=None,
+    commencement_date=None,
+    registration_date=None,
+    address=None,
+    state=None,
+    pin=None,
+    unit_names=None,
+    nic_5_digit_codes=None,
+    nic_activity=None,
+    source=None,
+):
     with driver.session() as session:
+        props = {
+            "name": name,
+            "city": city,
+            "products": products,
+            "urn": urn,
+            "mobile": mobile,
+            "email": email,
+            "type": type,
+            "activity": activity,
+            "social_category": social_category,
+            "incorporation_date": incorporation_date,
+            "commencement_date": commencement_date,
+            "registration_date": registration_date,
+            "address": _normalize_address(address),
+            "state": state,
+            "pin": pin,
+            "unit_names": _normalize_list(unit_names),
+            "nic_5_digit_codes": _normalize_list(nic_5_digit_codes),
+            "nic_activity": nic_activity,
+            "source": source,
+        }
         session.run(
             """
             MERGE (m:MSE {id: $id})
-            SET m.name = $name, m.city = $city, m.products = $products
+            SET m += $props
             MERGE (c:Category {code: $cat})
+            SET c.name = coalesce(c.name, $cat_name)
             MERGE (m)-[:OFFERS]->(c)
             """,
             id=mse_id,
-            name=name,
-            city=city,
-            products=products,
             cat=category,
+            cat_name=category_name,
+            props=props,
         )
 
 
@@ -93,13 +157,36 @@ def fetch_recent_mses(driver, limit=10):
             session.run(
                 """
                 MATCH (m:MSE)
-                RETURN m.id AS id, m.name AS name, m.city AS city, m.products AS products
+                OPTIONAL MATCH (m)-[:OFFERS]->(c:Category)
+                RETURN m.id AS id,
+                       properties(m) AS props,
+                       c.code AS category_code,
+                       c.name AS category_name
                 ORDER BY m.id DESC
                 LIMIT $limit
                 """,
                 limit=limit,
             )
         )
+
+
+def fetch_mse_by_id(driver, mse_id):
+    with driver.session() as session:
+        record = session.run(
+            """
+            MATCH (m:MSE {id: $id})
+            OPTIONAL MATCH (m)-[:OFFERS]->(c:Category)
+            RETURN properties(m) AS props, c.code AS category_code, c.name AS category_name
+            """,
+            id=mse_id,
+        ).single()
+        if not record:
+            return None
+        props = record.get("props") or {}
+        props["category_code"] = record.get("category_code")
+        props["category_name"] = record.get("category_name")
+        props["id"] = mse_id
+        return props
 
 
 def fetch_snps(driver, limit=None):
@@ -136,9 +223,9 @@ def fetch_cities(driver):
     with driver.session() as session:
         rows = session.run(
             """
-            MATCH (s:SNP)
-            WHERE s.city IS NOT NULL
-            RETURN DISTINCT s.city AS city
+            MATCH (n)
+            WHERE n.city IS NOT NULL
+            RETURN DISTINCT n.city AS city
             ORDER BY city ASC
             """
         )

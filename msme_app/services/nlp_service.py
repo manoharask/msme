@@ -29,6 +29,11 @@ def normalize_city(city, transcription, city_list):
         return city
     city = (city or "").strip()
     if city:
+        alias_map = {
+            "baroda": "Vadodara",
+        }
+        if city.lower() in alias_map:
+            return alias_map[city.lower()]
         lower_map = {c.lower(): c for c in city_list}
         if city.lower() in lower_map:
             return lower_map[city.lower()]
