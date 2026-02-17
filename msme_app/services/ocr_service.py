@@ -62,10 +62,6 @@ def _normalize_urn_text(text):
 
 def _configure_tesseract():
     cmd = os.getenv("TESSERACT_CMD")
-    if not cmd:
-        default = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-        if os.path.exists(default):
-            cmd = default
     if cmd:
         pytesseract.pytesseract.tesseract_cmd = cmd
 
@@ -109,11 +105,7 @@ def extract_text_from_pil_image(image):
 
 
 def extract_text_from_pdf(pdf_path):
-    poppler_path = os.getenv("POPPLER_PATH")
-    if not poppler_path:
-        default = r"C:\Program Files\poppler\Library\bin"
-        if os.path.exists(default):
-            poppler_path = default
+    poppler_path = os.getenv("POPPLER_PATH") or None
     images = convert_from_path(pdf_path, dpi=300, poppler_path=poppler_path)
     full_text = []
     for image in images:
@@ -287,7 +279,12 @@ def extract_with_llm(raw_text):
         ],
         temperature=0,
     )
-    return json.loads(response.choices[0].message.content.strip())
+    raw = response.choices[0].message.content.strip()
+    # Strip markdown code fences if the model wraps the JSON
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw)
+    return json.loads(raw)
 
 
 def process_with_fallback(file_path):

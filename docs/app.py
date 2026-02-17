@@ -1,4 +1,4 @@
-﻿import json
+import json
 import pandas as pd
 import streamlit as st
 
@@ -19,11 +19,8 @@ from msme_app.ui import (
     render_hero,
 )
 
-@st.cache_resource
-def _get_driver():
-    return get_driver(load_config())
-
-driver = _get_driver()
+config = load_config()
+driver = get_driver(config)
 
 configure_page()
 apply_styles()
@@ -55,23 +52,14 @@ try:
     col1.metric("MSEs", analytics["total_mses"])
     col2.metric("SNPs", analytics["total_snps"])
     col3.metric("Categories", analytics["total_categories"])
-    avg_rating = analytics.get("avg_rating") or 0
-    col4.metric("Avg Rating", f"{avg_rating*100:.0f}%")
+    col4.metric("Avg Rating", f"{analytics['avg_rating']*100:.0f}%")
     
     # Secondary metrics row
     col5, col6, col7, col8 = st.columns(4)
-    total_capacity = analytics.get("total_capacity") or 0
-    col5.metric("Total Capacity", f"{total_capacity:,}")
+    col5.metric("Total Capacity", f"{analytics['total_capacity']:,}")
     col6.metric("Export-Ready SNPs", analytics["export_capable_snps"])
     col7.metric("Cities Covered", analytics["unique_cities"])
     col8.metric("Active Connections", analytics["total_relationships"])
-
-    if (
-        (analytics.get("total_mses") or 0) == 0
-        and (analytics.get("total_snps") or 0) == 0
-        and (analytics.get("total_categories") or 0) == 0
-    ):
-        st.info("Run seed_graph.py to populate the database, then restart the app.")
 
     st.markdown("#### Live Graph Inventory")
     tab1, tab2, tab3 = st.tabs(["MSEs", "SNPs 🆕", "Categories 🆕"])
@@ -152,9 +140,6 @@ try:
 
             display_df = pd.DataFrame(display_rows)
             display_df.insert(0, "Select", False)
-            selected_id_state = st.session_state.get("dash_mse_selected_id")
-            if selected_id_state:
-                display_df.loc[display_df["ID"] == selected_id_state, "Select"] = True
 
             st.markdown(
                 """
@@ -178,13 +163,20 @@ try:
             )
 
             selected_rows = edited[edited["Select"] == True]
-            if selected_rows.empty:
-                st.session_state["dash_mse_selected_id"] = None
-            else:
+            if len(selected_rows) > 1:
+                prev_id = st.session_state.get("dash_mse_selected_id")
+                selected_ids = selected_rows["ID"].tolist()
+                new_ids = [i for i in selected_ids if i != prev_id]
+                keep_id = new_ids[0] if new_ids else selected_ids[0]
+                edited["Select"] = False
+                edited.loc[edited["ID"] == keep_id, "Select"] = True
+                st.session_state["dash_mse_editor"] = edited
+                st.session_state["dash_mse_selected_id"] = keep_id
+                st.rerun()
+
+            if not selected_rows.empty:
                 selected_id = selected_rows.iloc[0]["ID"]
-                if selected_id != selected_id_state:
-                    st.session_state["dash_mse_selected_id"] = selected_id
-                    st.rerun()
+                st.session_state["dash_mse_selected_id"] = selected_id
                 if hasattr(st, "dialog"):
                     @st.dialog("MSE Details")
                     def _dialog(mse_id):

@@ -61,7 +61,7 @@ def save_mse(
     urn=None,
     mobile=None,
     email=None,
-    enterprise_type=None,
+    type=None,
     activity=None,
     social_category=None,
     incorporation_date=None,
@@ -83,7 +83,7 @@ def save_mse(
             "urn": urn,
             "mobile": mobile,
             "email": email,
-            "type": enterprise_type,
+            "type": type,
             "activity": activity,
             "social_category": social_category,
             "incorporation_date": incorporation_date,
@@ -123,15 +123,12 @@ def run_reasoning(driver, mse_id, city):
                 """
                 MATCH (m:MSE {id: $mse})-[:OFFERS]->(c:Category)
                 MATCH (s:SNP)-[:SERVES]->(c)
+                WHERE toLower(s.city) CONTAINS toLower($city) OR s.rating > 0.85
                 WITH s, c, m,
                      (CASE
-                        WHEN toLower(s.city) = toLower(m.city) THEN 1.0
+                        WHEN s.city = m.city THEN 1.0
                         ELSE 0.2 END) AS geo,
-                     CASE
-                        WHEN s.export_capable = true AND (s.rating + 0.05) > 1.0 THEN 1.0
-                        WHEN s.export_capable = true THEN s.rating + 0.05
-                        ELSE s.rating
-                     END AS sla,
+                     s.rating + (CASE WHEN s.export_capable = true THEN 0.05 ELSE 0.0 END) AS sla,
                      CASE WHEN s.capacity > 150 THEN 0.9 ELSE 0.5 END AS capacity,
                      COUNT { (s)-[:SERVES]->(:Category) } * 0.05 AS network,
                      size(coalesce(s.certifications, [])) * 0.02 AS cert_bonus
@@ -146,8 +143,7 @@ def run_reasoning(driver, mse_id, city):
                        round((geo*0.5 + sla*0.2 + capacity*0.1 + network*0.1 + cert_bonus*0.1)*100) AS score,
                        round(geo*100) AS geo_pct,
                        round(sla*100) AS sla_pct,
-                       round(capacity*100) AS cap_pct,
-                       size(coalesce(s.certifications, [])) AS cert_count
+                       round(capacity*100) AS cap_pct
                 ORDER BY score DESC LIMIT 3
                 """,
                 mse=mse_id,
@@ -333,30 +329,30 @@ def fetch_analytics_summary(driver):
     with driver.session() as session:
         result = session.run(
             """
-            CALL () {
+            CALL {
                 MATCH (c:Category) 
                 RETURN count(c) as total_categories
             }
-            CALL () {
+            CALL {
                 MATCH (s:SNP) 
                 RETURN count(s) as total_snps, 
-                       coalesce(sum(s.capacity), 0) as total_capacity,
-                       coalesce(avg(s.rating), 0) as avg_rating
+                       sum(s.capacity) as total_capacity,
+                       avg(s.rating) as avg_rating
             }
-            CALL () {
+            CALL {
                 MATCH (m:MSE) 
                 RETURN count(m) as total_mses
             }
-            CALL () {
+            CALL {
                 MATCH (s:SNP) 
                 WHERE s.export_capable = true 
                 RETURN count(s) as export_capable_snps
             }
-            CALL () {
+            CALL {
                 MATCH (s:SNP) 
                 RETURN count(DISTINCT s.city) as unique_cities
             }
-            CALL () {
+            CALL {
                 MATCH ()-[r:SERVES]->() 
                 RETURN count(r) as total_relationships
             }
