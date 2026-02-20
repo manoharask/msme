@@ -6,7 +6,7 @@ whisper-openai==1.0.0
 pandas
 plotly
 pytesseract==0.3.10
-pillow==10.4.0
+pillow>=11.0.0
 pdf2image==1.17.0
-opencv-python==4.10.0.84
+opencv-python-headless==4.10.0.84
 numpy==2.1.3
