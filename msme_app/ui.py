@@ -1,4 +1,18 @@
+import base64
+import os
+
 import streamlit as st
+
+# ── Logo helper ──────────────────────────────────────────────────────────────
+_LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "static", "logo.png")
+
+def _logo_b64() -> str | None:
+    """Return base64-encoded logo or None if file not present."""
+    try:
+        with open(_LOGO_PATH, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        return None
 
 
 def configure_page():
@@ -711,10 +725,17 @@ def render_sidebar(current_page="dashboard"):
 
 
 def render_footer():
+    logo_b64 = _logo_b64()
+    logo_html = (
+        f'<img src="data:image/png;base64,{logo_b64}" '
+        f'style="height:28px;width:auto;object-fit:contain;vertical-align:middle;margin-right:0.5rem;" />'
+        if logo_b64 else ""
+    )
     st.markdown(
-        """
-<div style='text-align:center;padding:0.6rem 1rem;background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:10px;margin-top:1rem;'>
-    <span style='color:#1e40af;font-weight:700;font-size:0.82rem;'>Udyam Mitra | AI&S India LLP</span>
+        f"""
+<div style='text-align:center;padding:0.6rem 1rem;background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:10px;margin-top:1rem;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0.3rem;'>
+    {logo_html}
+    <span style='color:#1e40af;font-weight:700;font-size:0.82rem;'>Udyam Mitra | AI&amp;S India LLP</span>
     <span style='color:#5b6477;font-size:0.72rem;margin-left:0.6rem;'>Problem Statement 2 · AI-powered MSE Agent mapping tool · IndiaAI 2026 · Neo4j GraphRAG</span>
 </div>
 """,
