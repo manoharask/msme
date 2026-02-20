@@ -9,13 +9,20 @@ Usage:
     python reset_graph.py
 """
 import os
-from dotenv import load_dotenv
+import tomllib
+from pathlib import Path
 from neo4j import GraphDatabase
 
 
 def load_config():
-    """Load configuration from .env file"""
-    load_dotenv()
+    """Load credentials from .streamlit/secrets.toml, falling back to env vars."""
+    secrets_path = Path(__file__).resolve().parents[1] / ".streamlit" / "secrets.toml"
+    if secrets_path.exists():
+        with open(secrets_path, "rb") as f:
+            secrets = tomllib.load(f)
+        os.environ.setdefault("NEO4J_URI", secrets.get("NEO4J_URI", ""))
+        os.environ.setdefault("NEO4J_USERNAME", secrets.get("NEO4J_USERNAME", ""))
+        os.environ.setdefault("NEO4J_PASSWORD", secrets.get("NEO4J_PASSWORD", ""))
     return {
         "NEO4J_URI": os.getenv("NEO4J_URI"),
         "NEO4J_USER": os.getenv("NEO4J_USERNAME"),

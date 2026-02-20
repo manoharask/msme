@@ -124,6 +124,9 @@ celerybeat.pid
 # Environments
 .env
 .venv
+
+# Streamlit secrets (contains API keys — never commit)
+.streamlit/secrets.toml
 env/
 venv/
 ENV/

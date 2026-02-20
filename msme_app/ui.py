@@ -2,7 +2,7 @@ import streamlit as st
 
 
 def configure_page():
-    st.set_page_config(layout="wide", page_title="Dashboard", page_icon="🧠")
+    st.set_page_config(layout="wide", page_title="Udyam Mitra", page_icon="🎯")
 
 
 def apply_styles():
@@ -86,31 +86,40 @@ body, .main {font-family: 'Space Grotesk', sans-serif; background: #e6edf5;}
   font-size:0.68rem; font-weight:600; letter-spacing:0.08em;
   text-transform:uppercase; opacity:0.7; display:block; margin-top:2px;
 }
-/* Compact info grid */
-.snp-grid {
-  display:grid; grid-template-columns:1fr 1fr;
-  gap:0.35rem 0.6rem; margin-top:0.85rem;
+/* Why-selected section */
+.snp-divider {
+  border:none; border-top:1px solid rgba(255,255,255,0.15);
+  margin:0.75rem 0 0.65rem;
 }
-.snp-row {
-  display:flex; flex-direction:column;
-  background:rgba(255,255,255,0.10);
-  border-radius:8px; padding:0.35rem 0.6rem;
+.snp-why-label {
+  font-size:0.58rem; font-weight:700; letter-spacing:0.1em;
+  text-transform:uppercase; opacity:0.55; margin-bottom:0.35rem;
 }
-.snp-row.full { grid-column: span 2; }
-.snp-lbl {
-  font-size:0.62rem; font-weight:600; letter-spacing:0.07em;
-  text-transform:uppercase; opacity:0.65; line-height:1.2;
+.snp-why-text {
+  font-size:0.79rem; line-height:1.55; opacity:0.95; margin-bottom:0.6rem;
 }
-.snp-val {
-  font-size:0.82rem; font-weight:500; line-height:1.3; margin-top:1px;
+/* Attribute chips */
+.snp-chips {
+  display:flex; flex-wrap:wrap; gap:5px; margin-bottom:0.5rem;
 }
-/* Badge */
+.snp-chip {
+  background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22);
+  border-radius:20px; padding:0.2rem 0.6rem;
+  font-size:0.68rem; font-weight:600; opacity:0.9;
+}
+/* Caveat warning */
+.snp-caveat {
+  background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.35);
+  border-radius:8px; padding:0.3rem 0.65rem;
+  font-size:0.72rem; font-weight:500; margin-top:0.4rem;
+}
+/* Badge — inline next to score, no top margin */
 .snp-badge {
-  display:inline-block; margin-top:0.75rem;
+  display:inline-block;
   background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.28);
   border-radius:20px; padding:0.22rem 0.75rem;
   font-size:0.68rem; font-weight:700; letter-spacing:0.06em;
-  text-transform:uppercase;
+  text-transform:uppercase; vertical-align:middle;
 }
 /* Deprecate old .reasoning-card so no remnants cause layout issues */
 .reasoning-card {display:none;}
@@ -119,16 +128,16 @@ body, .main {font-family: 'Space Grotesk', sans-serif; background: #e6edf5;}
    All sizing driven by CSS vars for perfect consistency.
    ════════════════════════════════════════════════════════════ */
 :root {
-  --fi-h:       40px;
-  --fi-fs:      0.875rem;
-  --fi-radius:  9px;
-  --fi-pad:     0 12px;
-  --fi-bg:      #f1f5f9;
+  --fi-h:       38px;
+  --fi-fs:      0.855rem;
+  --fi-radius:  8px;
+  --fi-pad:     0 11px;
+  --fi-bg:      #f8fafc;
   --fi-bg-focus:#ffffff;
-  --fi-border:  #dde3ec;
+  --fi-border:  #e2e8f0;
   --fi-hover:   #94a3b8;
   --fi-focus:   #2563eb;
-  --lbl-fs:     0.72rem;
+  --lbl-fs:     0.68rem;
   --lbl-color:  #64748b;
   --lbl-weight: 600;
 }
@@ -200,29 +209,41 @@ div[data-testid="stTextArea"]   > label {
   line-height:    1.2               !important;
 }
 
-/* ── Section pill — self-contained, no open div ─────────── */
+/* ── Section headers — enterprise clean style ───────────── */
 .fsec {
-  display:        inline-flex;
+  display:        flex;
   align-items:    center;
-  gap:            6px;
-  padding:        4px 12px 4px 8px;
-  border-radius:  100px;
-  font-size:      0.68rem;
+  gap:            8px;
+  font-size:      0.69rem;
   font-weight:    700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  margin:         18px 0 8px 0;
-  border:         1.5px solid currentColor;
+  color:          #334155;
+  margin:         14px 0 7px 0;
+  padding:        0;
+  border:         none;
+  border-radius:  0;
+  background:     transparent;
 }
-.fsec-icon  { font-size: 0.8rem; line-height:1; }
-.fsec-blue  { color:#1d4ed8; background:#eff6ff; }
-.fsec-green { color:#15803d; background:#f0fdf4; }
-.fsec-violet{ color:#6d28d9; background:#f5f3ff; }
-.fsec-amber { color:#92400e; background:#fffbeb; }
-.fsec-rose  { color:#9f1239; background:#fff1f2; }
-
-/* Divider line below each section's last field row */
-.fsec + div { border-top: none !important; }
+.fsec::before {
+  content:        '';
+  width:          3px;
+  height:         14px;
+  border-radius:  2px;
+  background:     linear-gradient(180deg,#2563eb,#6d28d9);
+  flex-shrink:    0;
+}
+.fsec::after {
+  content:        '';
+  flex:           1;
+  height:         1px;
+  background:     linear-gradient(90deg,#cbd5e1,transparent);
+}
+.fsec-icon  { font-size:0.82rem; line-height:1; }
+.fsec-blue, .fsec-green, .fsec-violet, .fsec-amber, .fsec-rose {
+  color:          #334155;
+  background:     transparent;
+}
 
 /* ── Save button ─────────────────────────────────────────── */
 div[data-testid="stButton"] > button {
@@ -256,8 +277,38 @@ div[data-testid="stButton"] > button:active { transform:none !important; }
 /* Tighten onboarding spacing */
 section[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stTabs"]) {margin-top: 0.2rem;}
 div[data-testid="stTabs"] {margin-top: 0.25rem; margin-bottom: 0.5rem;}
+/* Tab panel — white card surface */
+div[data-baseweb="tab-panel"] {
+  background:    #ffffff !important;
+  border-radius: 0 12px 12px 12px !important;
+  border:        1px solid #e2e8f0 !important;
+  padding:       1.1rem 1.3rem 1rem !important;
+  box-shadow:    0 4px 18px rgba(2,6,23,0.06) !important;
+}
 .stTabs [data-baseweb="tab-panel"] > div:empty {display:none;}
 .stTabs [data-baseweb="tab-panel"] > div:has(> div:empty) {display:none;}
+/* Tab strip — match card top edge */
+div[data-baseweb="tab-list"] {
+  background:    transparent !important;
+  border-bottom: none !important;
+  gap:           2px !important;
+}
+div[data-baseweb="tab"] {
+  background:    #f1f5f9 !important;
+  border-radius: 8px 8px 0 0 !important;
+  border:        1px solid #e2e8f0 !important;
+  border-bottom: none !important;
+  padding:       0.35rem 0.9rem !important;
+  font-size:     0.78rem !important;
+  font-weight:   600 !important;
+  color:         #64748b !important;
+  transition:    background .15s, color .15s !important;
+}
+div[data-baseweb="tab"][aria-selected="true"] {
+  background:    #ffffff !important;
+  color:         #1d4ed8 !important;
+  border-color:  #e2e8f0 !important;
+}
 .stFileUploader {margin-top: 0.35rem;}
 .stFileUploader section {padding: 0.5rem 0.75rem !important;}
 .stFileUploader button {background: #1d4ed8 !important; color: #fff !important; border: none !important;}
@@ -267,6 +318,68 @@ div[data-testid="stTabs"] {margin-top: 0.25rem; margin-bottom: 0.5rem;}
 .onboarding-header .section-title {font-size: 1.2rem; margin: 0; text-align: left !important;}
 .onboarding-header .section-subtitle {margin: 0.1rem 0 0.4rem 0; text-align: left !important;}
 .onboarding-block {margin-left: 0; padding-left: 0;}
+
+/* ── Global compact spacing ─────────────────────────────── */
+.block-container { padding-top: 3rem !important; padding-bottom: 0.5rem !important; }
+[data-testid="column"] { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
+[data-baseweb="tab-panel"] { padding-top: 0.3rem !important; }
+h4 { margin-top: 0.2rem !important; margin-bottom: 0.25rem !important; }
+
+/* ── Compact st.metric() cards ───────────────────────────── */
+[data-testid="stMetric"] {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.35rem 0.75rem 0.4rem !important;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.05);
+}
+[data-testid="stMetricValue"] {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  color: #0b1221 !important;
+}
+[data-testid="stMetricLabel"] > div {
+  font-size: 0.63rem !important;
+  font-weight: 600 !important;
+  color: #5b6477 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+/* Remove extra gap between metric rows */
+[data-testid="stVerticalBlock"] > [data-testid="element-container"]:has([data-testid="stMetric"]) {
+  margin-bottom: 0.25rem !important;
+}
+/* ── Sidebar — dark nav panel ────────────────────────────── */
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg,#0f172a 0%,#1a2744 100%) !important;
+  border-right: 1px solid rgba(255,255,255,0.07) !important;
+  min-width: 220px !important;
+}
+[data-testid="stSidebarContent"] { padding: 0 !important; }
+/* Override main button styles for sidebar nav buttons */
+[data-testid="stSidebar"] div[data-testid="stButton"] > button {
+  background:     rgba(255,255,255,0.07) !important;
+  border:         1px solid rgba(255,255,255,0.10) !important;
+  color:          #cbd5e1 !important;
+  border-radius:  8px !important;
+  font-size:      0.82rem !important;
+  font-weight:    600 !important;
+  height:         40px !important;
+  padding:        0 1rem !important;
+  box-shadow:     none !important;
+  letter-spacing: 0 !important;
+  justify-content: flex-start !important;
+  transition: background .15s, border-color .15s, color .15s !important;
+}
+[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {
+  background:  rgba(255,255,255,0.13) !important;
+  border-color:rgba(255,255,255,0.22) !important;
+  color:       #ffffff !important;
+  transform:   none !important;
+  filter:      none !important;
+  box-shadow:  none !important;
+}
 </style>
 """,
         unsafe_allow_html=True,
@@ -276,9 +389,13 @@ div[data-testid="stTabs"] {margin-top: 0.25rem; margin-bottom: 0.5rem;}
 def render_header():
     st.markdown(
         """
-<div class="app-shell">
-    <div class="header-1">🧠 MSME TEAM GraphRAG Platform</div>
-    <div class="header-2">Neo4j Knowledge Graph Reasoning | IndiaAI Innovation Challenge 2026</div>
+<div style="text-align:center;margin-bottom:0.35rem;">
+  <div style="font-size:2.2rem;font-weight:700;color:#0b1221;letter-spacing:-0.03em;line-height:1.15;">
+    🎯 Udyam Mitra
+  </div>
+  <div style="font-size:0.88rem;color:#5b6477;margin-top:0.2rem;font-weight:500;">
+    AI-Powered MSE Discovery &amp; SNP Matching &nbsp;|&nbsp; IndiaAI Innovation Challenge 2026
+  </div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -288,11 +405,35 @@ def render_header():
 def render_hero():
     st.markdown(
         """
-<div class="app-shell">
-    <div class="graph-hero graph-hero--compact">
-        <h3 style='margin-bottom: 0.4rem; color: #ffffff;'>Multi-hop Graph Reasoning: MSE → Category → SNP + Network Effects</h3>
-        <p style='font-size: 0.98rem; opacity: 0.9; margin: 0; color: #ffffff;'>Voice → AI → ONDC Taxonomy → Intelligent Matching</p>
-    </div>
+<div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:10px;
+            padding:0.5rem 1.2rem;margin-bottom:0.5rem;
+            display:flex;align-items:center;justify-content:center;
+            gap:0;flex-wrap:wrap;">
+  <span style="font-size:0.75rem;font-weight:700;color:#1e40af;
+               display:flex;align-items:center;gap:5px;">
+    &#127908; Voice Input
+  </span>
+  <span style="color:#93c5fd;font-size:0.95rem;margin:0 0.55rem;font-weight:400;">&#8594;</span>
+  <span style="font-size:0.75rem;font-weight:700;color:#1e40af;
+               display:flex;align-items:center;gap:5px;">
+    &#129302; AI Extraction
+  </span>
+  <span style="color:#93c5fd;font-size:0.95rem;margin:0 0.55rem;font-weight:400;">&#8594;</span>
+  <span style="font-size:0.75rem;font-weight:700;color:#1e40af;
+               display:flex;align-items:center;gap:5px;">
+    &#128230; ONDC Taxonomy
+  </span>
+  <span style="color:#93c5fd;font-size:0.95rem;margin:0 0.55rem;font-weight:400;">&#8594;</span>
+  <span style="font-size:0.75rem;font-weight:700;color:#1e40af;
+               display:flex;align-items:center;gap:5px;">
+    &#128200; Graph Reasoning
+  </span>
+  <span style="color:#93c5fd;font-size:0.95rem;margin:0 0.55rem;font-weight:400;">&#8594;</span>
+  <span style="font-size:0.75rem;font-weight:700;color:#1e3a8a;
+               background:#dbeafe;border-radius:20px;padding:0.2rem 0.75rem;
+               display:flex;align-items:center;gap:5px;">
+    &#127919; Best-fit SNP
+  </span>
 </div>
 """,
         unsafe_allow_html=True,
@@ -351,89 +492,230 @@ def render_reasoning_cards(reasoning_result, mse_city, category_name, category_c
 
     card_styles = ["snp-card-1", "snp-card-2", "snp-card-3"]
     medals      = ["\U0001f947", "\U0001f948", "\U0001f949"]
-    labels      = ["TOP MATCH", "STRONG MATCH", "GOOD MATCH"]
+
+    def _match_label(score):
+        if score >= 65: return "TOP MATCH"
+        if score >= 45: return "STRONG MATCH"
+        if score >= 25: return "GOOD MATCH"
+        return "PARTIAL MATCH"
+
+    def _build_reason(result, mse_city):
+        """Return (reason_sentence, chips_list, caveat_str)."""
+        city_match     = str(result["location"]).strip().lower() == str(mse_city).strip().lower()
+        sla_pct        = result.get("sla_pct", 0)
+        cap_pct        = result.get("cap_pct", 0)
+        export_capable = result.get("export_capable", False)
+        certs          = result.get("certifications") or []
+        specialization = (result.get("specialization") or "").strip()
+        payment        = result.get("payment_terms") or ""
+        location       = result.get("location", "")
+
+        # ── Reason sentence ───────────────────────────────────
+        parts = []
+        if city_match:
+            parts.append(f"a local provider in {location}")
+        else:
+            parts.append(f"based in {location}")
+
+        if specialization:
+            parts.append(f"specialises in {specialization[:60].lower()}")
+
+        if sla_pct >= 90:
+            parts.append(f"excellent service rating of {sla_pct}%")
+        elif sla_pct >= 70:
+            parts.append(f"strong service rating of {sla_pct}%")
+        else:
+            parts.append(f"service rating of {sla_pct}%")
+
+        if export_capable:
+            parts.append("export-ready")
+
+        if len(parts) == 1:
+            reason = parts[0].capitalize() + "."
+        elif len(parts) == 2:
+            reason = f"{parts[0].capitalize()} and {parts[1]}."
+        else:
+            reason = f"{parts[0].capitalize()}, {', '.join(parts[1:-1])}, and {parts[-1]}."
+
+        # ── Attribute chips ───────────────────────────────────
+        chips = []
+        if certs:
+            cert_str = " · ".join(certs[:3])
+            suffix = f" +{len(certs) - 3}" if len(certs) > 3 else ""
+            chips.append(f"✓ {cert_str}{suffix}")
+        chips.append("⚡ High capacity" if cap_pct >= 90 else "📦 Std capacity")
+        if payment:
+            chips.append(f"💳 {payment}")
+        if export_capable:
+            chips.append("🌐 Export-ready")
+
+        # ── Caveat ────────────────────────────────────────────
+        caveat = (
+            f"⚠ Located in {location}, not in {mse_city} — consider delivery lead time."
+            if not city_match else ""
+        )
+
+        return reason, chips, caveat
 
     for i, result in enumerate(reasoning_result):
         with cols[i]:
             city_match  = str(result["location"]).strip().lower() == str(mse_city).strip().lower()
             geo_icon    = "&#128205;" if city_match else "&#127758;"
-            geo_label   = result["location"]
+            location    = result.get("location", "")
+            badge       = _match_label(result.get("score", 0))
+            medal       = medals[i] if i < len(medals) else ""
 
-            certs        = result.get("certifications") or []
-            cert_text    = ", ".join(certs) if certs else "None"
-            cert_count   = result.get("cert_count") or len(certs)
+            reason, chips, caveat = _build_reason(result, mse_city)
 
-            export_capable = result.get("export_capable", False)
-            export_text    = "Yes &#9989;" if export_capable else "No"
-            sla_note       = " +5%" if export_capable else ""
-
-            specialization = (result.get("specialization") or "")[:42]
-            spec_row = (
-                f'<div class="snp-row full">'
-                f'<span class="snp-lbl">&#128161; Specialization</span>'
-                f'<span class="snp-val">{specialization}</span></div>'
-            ) if specialization else ""
-
-            payment  = result.get("payment_terms") or "N/A"
-            badge    = labels[i] if i < len(labels) else ""
-            medal    = medals[i] if i < len(medals) else ""
+            chips_html  = "".join(f'<span class="snp-chip">{c}</span>' for c in chips)
+            caveat_html = f'<div class="snp-caveat">{caveat}</div>' if caveat else ""
 
             st.markdown(f"""
 <div class="{card_styles[i]}">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">
-    <div>
-      <div style="font-size:0.78rem;opacity:0.7;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:2px;">{medal} {result['snp']}</div>
-      <div class="snp-score">{result['score']}%</div>
-      <span class="snp-score-label">Match Score</span>
-    </div>
-    <div style="text-align:right;">
-      <div class="snp-badge">{badge}</div>
-      <div style="font-size:0.72rem;opacity:0.65;margin-top:0.4rem;">{geo_icon} {geo_label}</div>
-    </div>
+  <!-- Row 1: name left, location right -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <div style="font-size:0.72rem;opacity:0.7;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;">{medal} {result['snp']}</div>
+    <div style="font-size:0.70rem;opacity:0.60;">{geo_icon} {location}</div>
   </div>
-  <div class="snp-grid">
-    <div class="snp-row">
-      <span class="snp-lbl">&#128200; Geo</span>
-      <span class="snp-val">{result['geo_pct']}%</span>
-    </div>
-    <div class="snp-row">
-      <span class="snp-lbl">&#11088; SLA{sla_note}</span>
-      <span class="snp-val">{result['sla_pct']}%</span>
-    </div>
-    <div class="snp-row">
-      <span class="snp-lbl">&#128230; Capacity</span>
-      <span class="snp-val">{result['cap_pct']}%</span>
-    </div>
-    <div class="snp-row">
-      <span class="snp-lbl">&#127760; Export</span>
-      <span class="snp-val">{export_text}</span>
-    </div>
-    <div class="snp-row">
-      <span class="snp-lbl">&#127885; Certs ({cert_count})</span>
-      <span class="snp-val">{cert_text}</span>
-    </div>
-    <div class="snp-row">
-      <span class="snp-lbl">&#128179; Payment</span>
-      <span class="snp-val">{payment}</span>
-    </div>
-    {spec_row}
+  <!-- Row 2: score + badge inline -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+    <div class="snp-score">{result['score']}%</div>
+    <div class="snp-badge">{badge}</div>
   </div>
+  <span class="snp-score-label">Match Score</span>
+  <!-- Divider -->
+  <div style="border-top:1px solid rgba(255,255,255,0.15);margin:0.65rem 0 0.5rem;"></div>
+  <!-- Why selected -->
+  <div class="snp-why-label">Why Selected</div>
+  <div class="snp-why-text">{reason}</div>
+  <!-- Chips -->
+  <div class="snp-chips">{chips_html}</div>
+  {caveat_html}
 </div>
 """, unsafe_allow_html=True)
 
 
 def render_dashboard_header():
-    st.markdown("---")
-    st.header("📊 Graph-Powered Business Intelligence")
+    st.markdown(
+        "<div style='font-size:0.95rem;font-weight:700;color:#0b1221;letter-spacing:-0.01em;"
+        "margin:0.1rem 0 0.3rem 0;'>📊 Live Intelligence Dashboard</div>",
+        unsafe_allow_html=True,
+    )
 
+
+
+def render_sidebar(current_page="dashboard"):
+    with st.sidebar:
+        # ── Brand block ──────────────────────────────────────
+        st.markdown(
+            """
+<div style="padding:1.4rem 1.1rem 1rem;border-bottom:1px solid rgba(255,255,255,0.09);">
+  <div style="font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:-0.02em;line-height:1.2;white-space:nowrap;">
+    🎯 Udyam Mitra
+  </div>
+  <div style="font-size:0.62rem;color:#93a8c0;margin-top:0.45rem;letter-spacing:0.07em;
+              text-transform:uppercase;">
+    AI&#8209;Powered MSE Discovery
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+        # ── Nav section ──────────────────────────────────────
+        st.markdown(
+            '<div style="font-size:0.58rem;font-weight:700;letter-spacing:0.12em;'
+            'text-transform:uppercase;color:#7090b0;margin:1rem 1.1rem 0.4rem;">Menu</div>',
+            unsafe_allow_html=True)
+
+        if st.button("🏠  Dashboard", use_container_width=True, key="nav_dash"):
+            st.switch_page("app.py")
+        if st.button("➕  Add MSE", use_container_width=True, key="nav_add"):
+            st.switch_page("pages/01_Add_MSE.py")
+        if st.button("💬  Ask Anything", use_container_width=True, key="nav_ask"):
+            st.switch_page("pages/04_Ask_Anything.py")
+
+        # ── Admin section ─────────────────────────────────────
+        st.markdown(
+            '<div style="font-size:0.58rem;font-weight:700;letter-spacing:0.12em;'
+            'text-transform:uppercase;color:#7090b0;margin:1rem 1.1rem 0.4rem;">Admin</div>',
+            unsafe_allow_html=True)
+
+        if st.button("🏢  Manage SNPs", use_container_width=True, key="nav_snps"):
+            st.switch_page("pages/02_Manage_SNPs.py")
+        if st.button("🏷️  Manage Categories", use_container_width=True, key="nav_cats"):
+            st.switch_page("pages/03_Manage_Categories.py")
+
+        # ── Active page indicator ────────────────────────────
+        _page_meta = {
+            "dashboard":         ("📊 Dashboard",         "#3b82f6"),
+            "add_mse":           ("📝 Add MSE",           "#8b5cf6"),
+            "ask_anything":      ("💬 Ask Anything",      "#06b6d4"),
+            "manage_snps":       ("🏢 Manage SNPs",       "#10b981"),
+            "manage_categories": ("🏷️ Manage Categories", "#f59e0b"),
+        }
+        active_label, active_color = _page_meta.get(
+            current_page, ("📊 Dashboard", "#3b82f6")
+        )
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:7px;margin:0.5rem 0.5rem 0;'
+            f'background:rgba(255,255,255,0.06);border-radius:7px;padding:0.3rem 0.75rem;'
+            f'border-left:3px solid {active_color};">'
+            f'<span style="font-size:0.68rem;color:#8fa8c4;">Active:</span>'
+            f'<span style="font-size:0.68rem;font-weight:600;color:#e2e8f0;">{active_label}</span>'
+            f'</div>',
+            unsafe_allow_html=True)
+
+        # ── Divider ──────────────────────────────────────────
+        st.markdown(
+            '<div style="border-top:1px solid rgba(255,255,255,0.08);margin:1rem 0;"></div>',
+            unsafe_allow_html=True)
+
+        # ── Tech stack ───────────────────────────────────────
+        st.markdown(
+            '<div style="font-size:0.58rem;font-weight:700;letter-spacing:0.12em;'
+            'text-transform:uppercase;color:#7090b0;'
+            'margin:0 0.5rem 0.5rem;padding-left:0.75rem;">Powered By</div>',
+            unsafe_allow_html=True)
+
+        tech = [
+            ("🔗", "Neo4j GraphRAG"),
+            ("✨", "GPT-4o mini"),
+            ("🎙️", "OpenAI Whisper"),
+            ("📋", "ONDC Taxonomy"),
+        ]
+        for icon, label in tech:
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:8px;'
+                f'background:rgba(255,255,255,0.05);border-radius:7px;'
+                f'padding:0.32rem 0.75rem;margin:0 0.5rem 0.3rem;">'
+                f'<span style="font-size:0.9rem;line-height:1;">{icon}</span>'
+                f'<span style="font-size:0.72rem;font-weight:500;color:#b8ccde;">{label}</span>'
+                f'</div>',
+                unsafe_allow_html=True)
+
+        # ── Competition badge ────────────────────────────────
+        st.markdown(
+            '<div style="border-top:1px solid rgba(255,255,255,0.08);margin:0.9rem 0 0.7rem;"></div>',
+            unsafe_allow_html=True)
+        st.markdown(
+            """
+<div style="margin:0 0.5rem;background:linear-gradient(135deg,#1e3a8a,#2563eb);
+            border-radius:10px;padding:0.65rem 0.85rem;text-align:center;">
+  <div style="font-size:0.58rem;font-weight:700;color:#93c5fd;letter-spacing:0.1em;
+              text-transform:uppercase;">IndiaAI</div>
+  <div style="font-size:0.75rem;font-weight:700;color:#fff;margin-top:2px;">
+    Innovation Challenge
+  </div>
+  <div style="font-size:0.65rem;color:#bfdbfe;margin-top:1px;">2026 · Problem Statement 2</div>
+</div>
+""", unsafe_allow_html=True)
 
 
 def render_footer():
     st.markdown(
         """
-<div style='text-align:center;padding:2rem;background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:20px;margin-top:2rem;'>
-    <h3 style='color:#1e40af;'>AI&S India LLP | IndiaAI Innovation Challenge 2026</h3>
-    <p><strong>Problem Statement 2:</strong> AI-powered MSE Agent mapping tool | Neo4j GraphRAG</p>
+<div style='text-align:center;padding:0.6rem 1rem;background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:10px;margin-top:1rem;'>
+    <span style='color:#1e40af;font-weight:700;font-size:0.82rem;'>Udyam Mitra | AI&S India LLP</span>
+    <span style='color:#5b6477;font-size:0.72rem;margin-left:0.6rem;'>Problem Statement 2 · AI-powered MSE Agent mapping tool · IndiaAI 2026 · Neo4j GraphRAG</span>
 </div>
 """,
         unsafe_allow_html=True,

@@ -34,7 +34,10 @@ from msme_app.ui import (
     render_hero,
     render_metrics,
     render_reasoning_cards,
+    render_sidebar,
 )
+
+configure_page()
 
 @st.cache_resource
 def _get_driver():
@@ -42,7 +45,6 @@ def _get_driver():
 
 driver = _get_driver()
 
-configure_page()
 apply_styles()
 render_header()
 render_hero()
@@ -54,16 +56,10 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-with st.sidebar:
-    st.markdown("### Navigation")
-    if st.button("🏠 Dashboard", use_container_width=True):
-        st.switch_page("app.py")
-    if st.button("🧾 Add MSE", use_container_width=True):
-        st.switch_page("pages/01_Add_MSE.py")
-st.markdown("---")
+render_sidebar(current_page="add_mse")
 
-st.subheader("Voice-First Onboarding")
-st.caption("Upload a voice sample or enter details manually.")
+st.subheader("MSE Onboarding")
+st.caption("Register an MSE via voice, manual entry, or Udyam certificate upload.")
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
@@ -102,8 +98,114 @@ def reset_form_keys(prefix):
         del st.session_state[k]
 
 
+def _cleanup_temp_file(path):
+    if path and os.path.exists(path):
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+@st.dialog("MSE Registration", width="large")
+def _save_mse_dialog(p):
+    """Centered modal dialog: streams live save progress, then waits for user to view results."""
+    with st.status("Registering MSE…", expanded=True) as status:
+        st.write(f"📝 Creating MSE record for **{p['business_name']}**…")
+        save_mse(
+            driver,
+            p["mse_id"],
+            p["business_name"],
+            p["city"],
+            p["products"],
+            p["category_code"],
+            category_name=p["category_name"],
+            urn=p.get("urn"),
+            mobile=p.get("mobile"),
+            email=p.get("email"),
+            enterprise_type=p.get("enterprise_type"),
+            activity=p.get("activity"),
+            social_category=p.get("social_category"),
+            incorporation_date=p.get("incorporation_date"),
+            commencement_date=p.get("commencement_date"),
+            registration_date=p.get("registration_date"),
+            address=p.get("address"),
+            state=p.get("state"),
+            pin=p.get("pin"),
+            unit_names=p.get("unit_names"),
+            nic_5_digit_codes=p.get("nic_5_digit_codes"),
+            nic_activity=p.get("nic_activity"),
+            source=p.get("source"),
+        )
+        st.write(f"✅ MSE created — ID: `{p['mse_id']}` · Category: **{p['category_name']}**")
+        st.write("🔍 Searching for best-fit Seller Network Participants…")
+        reasoning_result = run_reasoning(driver, p["mse_id"], p["city"])
+        n = len(reasoning_result)
+        st.write(
+            f"✅ Found **{n} matching SNP{'s' if n != 1 else ''}** "
+            f"for {p['city']} · {p['category_name']}"
+        )
+        status.update(
+            label=f"MSE registered and {n} SNP{'s' if n != 1 else ''} matched!",
+            state="complete",
+            expanded=True,
+        )
+
+    # Persist results so the inline results view fires after dialog closes
+    st.session_state.last_result = {
+        "transcription": p.get("transcription", ""),
+        "source": p["source"],
+        "entities": {"business_name": p["business_name"], "city": p["city"]},
+        "category_code": p["category_code"],
+        "category_name": p["category_name"],
+        "mse_id": p["mse_id"],
+        "reasoning_result": reasoning_result,
+    }
+    if p["source"] == "voice":
+        st.session_state.uploader_key += 1
+    if p["source"] == "udyam":
+        st.session_state.udyam_uploader_key += 1
+    st.session_state[p["data_key"]] = None
+
+    st.divider()
+    if st.button("View SNP Matches →", type="primary", use_container_width=True):
+        st.rerun()
+
+
 def render_confirm_form(form_key_prefix):
     data_key = f"form_data_{form_key_prefix}"
+
+    # ── Inline results: shown after save, persists across reruns ──
+    lr = st.session_state.get("last_result")
+    if lr and lr.get("source") == form_key_prefix:
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Business", lr["entities"]["business_name"])
+        col2.metric("City",     lr["entities"]["city"])
+        col3.metric("Category", f"{lr['category_name']} ({lr['category_code']})")
+        st.success(f"✅ MSE {lr['mse_id']} created and mapped.")
+        st.markdown("---")
+        render_graph_header()
+        if lr.get("reasoning_result"):
+            render_reasoning_cards(
+                lr["reasoning_result"],
+                lr["entities"]["city"],
+                lr["category_name"],
+                lr["category_code"],
+            )
+        else:
+            st.warning(
+                f"⚠️ No SNP matches found for "
+                f"**{lr['category_name']} ({lr['category_code']})** "
+                f"in **{lr['entities']['city']}**. "
+                "Check that seed_graph.py has been run and SNPs cover this category."
+            )
+        if st.button("➕ Register Another MSE", key=f"{form_key_prefix}_another"):
+            st.session_state.last_result = None
+            st.session_state[data_key] = None
+            if form_key_prefix == "manual":
+                st.session_state.manual_initialized = False
+            st.rerun()
+        return
+
     data = st.session_state.get(data_key)
     if not data:
         return
@@ -133,15 +235,12 @@ def render_confirm_form(form_key_prefix):
         return value or ""
 
     st.markdown(
-        '''<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-        <div style="width:4px;height:28px;background:linear-gradient(180deg,#2563eb,#7c3aed);border-radius:4px;flex-shrink:0;"></div>
-        <div>
-          <div style="font-size:1.05rem;font-weight:700;color:#0f172a;letter-spacing:-0.01em;">MSE Onboarding</div>
-          <div style="font-size:0.72rem;color:#64748b;margin-top:1px;">Review and confirm details extracted from your input</div>
-        </div></div>''', unsafe_allow_html=True)
+        '<p style="font-size:0.78rem;color:#64748b;margin:0 0 10px 0;">'
+        'Review and confirm the extracted details before saving.</p>',
+        unsafe_allow_html=True)
 
     st.markdown('<div class="fsec fsec-blue"><span class="fsec-icon">🏷️</span>Business Identity</div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
     business_name = col1.text_input(
         "Business Name",
         value=data.get("business_name", ""),
@@ -155,9 +254,7 @@ def render_confirm_form(form_key_prefix):
         else 0,
         key=f"{form_key_prefix}_city",
     )
-
-    col1, col2 = st.columns(2)
-    products_text = col1.text_input(
+    products_text = col3.text_input(
         "Products (comma-separated)",
         value=_comma_list(data.get("products", "")),
         key=f"{form_key_prefix}_products",
@@ -166,7 +263,7 @@ def render_confirm_form(form_key_prefix):
         f"{data.get('category_name', 'Textiles')} "
         f"({data.get('category_code', 'TX001')})"
     )
-    category_selection = col2.selectbox(
+    category_selection = col4.selectbox(
         "Category",
         options=local_category_options,
         index=local_category_options.index(category_default)
@@ -177,9 +274,9 @@ def render_confirm_form(form_key_prefix):
 
 
     st.markdown('<div class="fsec fsec-green"><span class="fsec-icon">📋</span>Registration &amp; Contact</div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
     urn = col1.text_input(
-        "Udyam Registration Number",
+        "Udyam Reg. Number",
         value=data.get("urn", ""),
         key=f"{form_key_prefix}_urn",
     )
@@ -188,14 +285,12 @@ def render_confirm_form(form_key_prefix):
         value=data.get("mobile", ""),
         key=f"{form_key_prefix}_mobile",
     )
-
-    col1, col2 = st.columns(2)
-    email = col1.text_input(
+    email = col3.text_input(
         "Email",
         value=data.get("email", ""),
         key=f"{form_key_prefix}_email",
     )
-    enterprise_type = col2.text_input(
+    enterprise_type = col4.text_input(
         "Type of Enterprise",
         value=data.get("type", ""),
         key=f"{form_key_prefix}_type",
@@ -203,7 +298,7 @@ def render_confirm_form(form_key_prefix):
 
 
     st.markdown('<div class="fsec fsec-violet"><span class="fsec-icon">🏭</span>Enterprise Classification</div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
     activity = col1.text_input(
         "Activity",
         value=data.get("activity", ""),
@@ -216,8 +311,8 @@ def render_confirm_form(form_key_prefix):
     )
 
 
-    st.markdown('<div class="fsec fsec-amber"><span class="fsec-icon">📅</span>Key Dates</div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    st.markdown('<div class="fsec fsec-amber"><span class="fsec-icon">📅</span>Key Dates &amp; Classification</div>', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
     incorporation_date = col1.text_input(
         "Incorporation Date",
         value=data.get("incorporation_date", ""),
@@ -228,26 +323,24 @@ def render_confirm_form(form_key_prefix):
         value=data.get("commencement_date", ""),
         key=f"{form_key_prefix}_commence",
     )
-
-    col1, col2 = st.columns(2)
-    registration_date = col1.text_input(
+    registration_date = col3.text_input(
         "Registration Date",
         value=data.get("registration_date", ""),
         key=f"{form_key_prefix}_register",
     )
-    state = col2.text_input(
+
+    col1, col2, col3 = st.columns(3)
+    state = col1.text_input(
         "State",
         value=data.get("state", ""),
         key=f"{form_key_prefix}_state",
     )
-
-    col1, col2 = st.columns(2)
-    pin = col1.text_input(
+    pin = col2.text_input(
         "PIN",
         value=data.get("pin", ""),
         key=f"{form_key_prefix}_pin",
     )
-    nic_activity = col2.text_input(
+    nic_activity = col3.text_input(
         "NIC Activity",
         value=data.get("nic_activity", ""),
         key=f"{form_key_prefix}_nic_activity",
@@ -274,7 +367,7 @@ def render_confirm_form(form_key_prefix):
 
 
     st.markdown('<div class="fsec fsec-rose"><span class="fsec-icon">📍</span>Registered Address</div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     flat = col1.text_input(
         "Flat/Door/Block",
         value=address.get("flat", "") if isinstance(address, dict) else "",
@@ -285,26 +378,24 @@ def render_confirm_form(form_key_prefix):
         value=address.get("premises", "") if isinstance(address, dict) else "",
         key=f"{form_key_prefix}_addr_premises",
     )
-
-    col1, col2 = st.columns(2)
-    road = col1.text_input(
+    road = col3.text_input(
         "Road/Street/Lane",
         value=address.get("road", "") if isinstance(address, dict) else "",
         key=f"{form_key_prefix}_addr_road",
     )
-    village = col2.text_input(
+
+    col1, col2, col3 = st.columns(3)
+    village = col1.text_input(
         "Village/Town",
         value=address.get("village", "") if isinstance(address, dict) else "",
         key=f"{form_key_prefix}_addr_village",
     )
-
-    col1, col2 = st.columns(2)
-    block = col1.text_input(
+    block = col2.text_input(
         "Block",
         value=address.get("block", "") if isinstance(address, dict) else "",
         key=f"{form_key_prefix}_addr_block",
     )
-    district = col2.text_input(
+    district = col3.text_input(
         "District",
         value=address.get("district", "") if isinstance(address, dict) else "",
         key=f"{form_key_prefix}_addr_district",
@@ -348,51 +439,43 @@ def render_confirm_form(form_key_prefix):
         }
         # Use microseconds to avoid ID collision when saving quickly
         mse_id = f"MSE{datetime.now().strftime('%H%M%S%f')[:11]}"
-        save_mse(
-            driver,
-            mse_id,
-            business_name,
-            city,
-            products,
-            category_code,
-            category_name=category_name,
-            urn=urn,
-            mobile=mobile,
-            email=email,
-            enterprise_type=enterprise_type,
-            activity=activity,
-            social_category=social_category,
-            incorporation_date=incorporation_date,
-            commencement_date=commencement_date,
-            registration_date=registration_date,
-            address=address_dict or None,
-            state=state,
-            pin=pin,
-            unit_names=unit_names or None,
-            nic_5_digit_codes=nic_codes or None,
-            nic_activity=nic_activity,
-            source=data.get("source"),
-        )
-        reasoning_result = run_reasoning(driver, mse_id, city)
-        st.session_state.last_result = {
-            "transcription": data.get("transcription", ""),
-            "source": data.get("source", ""),          # identifies which tab owns this result
-            "entities": {"business_name": business_name, "city": city},
+
+        _save_mse_dialog({
+            "mse_id": mse_id,
+            "business_name": business_name,
+            "city": city,
+            "products": products,
             "category_code": category_code,
             "category_name": category_name,
-            "mse_id": mse_id,
-            "reasoning_result": reasoning_result,
-        }
-        st.session_state.toast_message = f"MSE {mse_id} created and mapped."
-        if data.get("source") == "voice":
-            st.session_state.uploader_key += 1
-        if data.get("source") == "udyam":
-            st.session_state.udyam_uploader_key += 1
-        st.session_state[data_key] = None
-        st.rerun()
+            "source": data.get("source", ""),
+            "transcription": data.get("transcription", ""),
+            "urn": urn,
+            "mobile": mobile,
+            "email": email,
+            "enterprise_type": enterprise_type,
+            "activity": activity,
+            "social_category": social_category,
+            "incorporation_date": incorporation_date,
+            "commencement_date": commencement_date,
+            "registration_date": registration_date,
+            "address": address_dict or None,
+            "state": state,
+            "pin": pin,
+            "unit_names": unit_names or None,
+            "nic_5_digit_codes": nic_codes or None,
+            "nic_activity": nic_activity,
+            "data_key": data_key,
+        })
 
 with tab_voice:
     st.markdown('<div class="onboarding-card">', unsafe_allow_html=True)
+    st.info(
+        "**Demo note:** Transcription uses OpenAI Whisper (`base` model) running locally. "
+        "Accuracy may vary, especially for mixed Hindi-English or regional accents. "
+        "In production, this would be replaced with a cloud ASR service (e.g. Azure Speech, "
+        "Google Cloud Speech-to-Text) for higher accuracy and real-time streaming.",
+        icon="ℹ️",
+    )
     language_choice = st.selectbox(
         "Speech Language",
         ["Auto Detect", "Hindi", "English"],
@@ -409,61 +492,65 @@ with tab_voice:
         st.audio(uploaded_file)
         if st.session_state.get("form_data_voice") is None:
             with st.spinner("Transcribing and extracting details"):
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                    tmp.write(uploaded_file.read())
-                    tmp_path = tmp.name
+                tmp_path = None
+                try:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                        tmp.write(uploaded_file.read())
+                        tmp_path = tmp.name
 
-                language_map = {
-                    "Auto Detect": "auto",
-                    "Hindi": "hi",
-                    "English": "en",
-                }
-                transcription = transcribe_audio(
-                    model, tmp_path, language=language_map.get(language_choice)
-                )
-                entities = extract_entities(transcription)
-                entities["city"] = normalize_city(
-                    entities.get("city", ""), transcription, city_list
-                )
-                if not entities.get("business_name"):
-                    products = entities.get("products") or []
-                    if products:
-                        entities["business_name"] = " & ".join(products[:2]).title()
-                    else:
-                        entities["business_name"] = "Unnamed MSE"
-                category_code, category_name = categorize_products(
-                    entities["products"],
-                    driver,
-                    business_name=entities.get("business_name", ""),
-                    transcription=transcription,
-                )
-                st.session_state.last_result = None
-                st.session_state.toast_message = None
-                reset_form_keys("voice")
-                st.session_state.form_data_voice = {
-                    "source": "voice",
-                    "transcription": transcription,
-                    "business_name": entities["business_name"],
-                    "city": entities.get("city", ""),
-                    "products": ", ".join(entities.get("products") or []),
-                    "category_code": category_code,
-                    "category_name": category_name,
-                    "urn": "",
-                    "mobile": "",
-                    "email": "",
-                    "type": "",
-                    "activity": "",
-                    "social_category": "",
-                    "incorporation_date": "",
-                    "commencement_date": "",
-                    "registration_date": "",
-                    "address": {},
-                    "state": "",
-                    "pin": "",
-                    "unit_names": "",
-                    "nic_5_digit_codes": "",
-                    "nic_activity": "",
-                }
+                    language_map = {
+                        "Auto Detect": "auto",
+                        "Hindi": "hi",
+                        "English": "en",
+                    }
+                    transcription = transcribe_audio(
+                        model, tmp_path, language=language_map.get(language_choice)
+                    )
+                    entities = extract_entities(transcription)
+                    entities["city"] = normalize_city(
+                        entities.get("city", ""), transcription, city_list
+                    )
+                    if not entities.get("business_name"):
+                        products = entities.get("products") or []
+                        if products:
+                            entities["business_name"] = " & ".join(products[:2]).title()
+                        else:
+                            entities["business_name"] = "Unnamed MSE"
+                    category_code, category_name = categorize_products(
+                        entities["products"],
+                        driver,
+                        business_name=entities.get("business_name", ""),
+                        transcription=transcription,
+                    )
+                    st.session_state.last_result = None
+                    st.session_state.toast_message = None
+                    reset_form_keys("voice")
+                    st.session_state.form_data_voice = {
+                        "source": "voice",
+                        "transcription": transcription,
+                        "business_name": entities["business_name"],
+                        "city": entities.get("city", ""),
+                        "products": ", ".join(entities.get("products") or []),
+                        "category_code": category_code,
+                        "category_name": category_name,
+                        "urn": "",
+                        "mobile": "",
+                        "email": "",
+                        "type": "",
+                        "activity": "",
+                        "social_category": "",
+                        "incorporation_date": "",
+                        "commencement_date": "",
+                        "registration_date": "",
+                        "address": {},
+                        "state": "",
+                        "pin": "",
+                        "unit_names": "",
+                        "nic_5_digit_codes": "",
+                        "nic_activity": "",
+                    }
+                finally:
+                    _cleanup_temp_file(tmp_path)
     render_confirm_form("voice")
 
 
@@ -473,8 +560,6 @@ with tab_manual:
     # to a blank dict, render_confirm_form rendered a fresh empty form, and
     # the SNP cards below the tabs were hidden under it.
     if not st.session_state.manual_initialized:
-        st.session_state.last_result = None
-        st.session_state.toast_message = None
         st.session_state.form_data_manual = {
             "source": "manual",
             "transcription": "",
@@ -502,40 +587,7 @@ with tab_manual:
         st.session_state.manual_initialized = True
 
     st.markdown('<div class="onboarding-card">', unsafe_allow_html=True)
-
-    # If we just saved and have a result, show it inside this tab
-    if st.session_state.last_result and st.session_state.last_result.get("source") == "manual":
-        result = st.session_state.last_result
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Business", result["entities"]["business_name"])
-        col2.metric("City",     result["entities"]["city"])
-        col3.metric("Category", f"{result['category_name']} ({result['category_code']})")
-        status_msg = st.session_state.toast_message or f"MSE {result['mse_id']} created and mapped."
-        st.success(status_msg)
-        st.session_state.toast_message = None
-        st.markdown("---")
-        render_graph_header()
-        if result.get("reasoning_result"):
-            render_reasoning_cards(
-                result["reasoning_result"],
-                result["entities"]["city"],
-                result["category_name"],
-                result["category_code"],
-            )
-        else:
-            st.warning(
-                f"\u26a0\ufe0f No SNP matches found for "
-                f"**{result['category_name']} ({result['category_code']})** "
-                f"in **{result['entities']['city']}**. "
-                "Check that seed_graph.py has been run and SNPs cover this category."
-            )
-        if st.button("Add Another MSE", key="manual_add_another"):
-            st.session_state.last_result = None
-            st.session_state.manual_initialized = False
-            st.session_state.form_data_manual = None
-            st.rerun()
-    else:
-        render_confirm_form("manual")
+    render_confirm_form("manual")
 
 with tab_udyam:
     st.markdown('<div class="onboarding-card">', unsafe_allow_html=True)
@@ -555,15 +607,19 @@ with tab_udyam:
         st.session_state.last_result = None
         st.session_state.toast_message = None
         with st.spinner("Processing Udyam certificate..."):
-            suffix = os.path.splitext(udyam_file.name)[1] or ".pdf"
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                tmp.write(udyam_file.read())
-                tmp_path = tmp.name
+            tmp_path = None
+            try:
+                suffix = os.path.splitext(udyam_file.name)[1] or ".pdf"
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                    tmp.write(udyam_file.read())
+                    tmp_path = tmp.name
 
-            if use_llm_fallback:
-                certificate_data = process_with_fallback(tmp_path)
-            else:
-                certificate_data = process_udyam_certificate(tmp_path)
+                if use_llm_fallback:
+                    certificate_data = process_with_fallback(tmp_path)
+                else:
+                    certificate_data = process_udyam_certificate(tmp_path)
+            finally:
+                _cleanup_temp_file(tmp_path)
 
         if certificate_data.get("error"):
             st.error(f"OCR failed: {certificate_data['error']}")
@@ -621,34 +677,5 @@ with tab_udyam:
 
     render_confirm_form("udyam")
 
-
-# Show SNP matching results for voice and udyam tabs (manual shows inside its own tab)
-if st.session_state.last_result and st.session_state.last_result.get("source") != "manual":
-    result = st.session_state.last_result
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Business", result["entities"]["business_name"])
-    col2.metric("City",     result["entities"]["city"])
-    col3.metric("Category", f"{result['category_name']} ({result['category_code']})")
-
-    status_message = st.session_state.toast_message or f"MSE {result['mse_id']} created and mapped."
-    st.success(status_message)
-    st.session_state.toast_message = None
-    st.markdown("---")
-    render_graph_header()
-    if result.get("reasoning_result"):
-        render_reasoning_cards(
-            result["reasoning_result"],
-            result["entities"]["city"],
-            result["category_name"],
-            result["category_code"],
-        )
-    else:
-        st.warning(
-            f"\u26a0\ufe0f No SNP matches found for "
-            f"**{result['category_name']} ({result['category_code']})** "
-            f"in **{result['entities']['city']}**. "
-            "Check that seed_graph.py has been run and SNPs cover this category."
-        )
 
 render_footer()

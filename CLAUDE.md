@@ -21,18 +21,28 @@ python utils/test_ocr.py
 
 ## Environment Setup
 
-Requires a `.env` file in the repo root (already gitignored):
+Credentials are loaded from **`.streamlit/secrets.toml`** (already gitignored).
+Copy the template and fill in your values:
 
-```
-OPENAI_API_KEY=sk-proj-...
-NEO4J_URI=neo4j+s://...
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=...
+```toml
+# .streamlit/secrets.toml
+OPENAI_API_KEY  = "sk-proj-..."
+NEO4J_URI       = "neo4j+s://xxxxxxxx.databases.neo4j.io"
+NEO4J_USERNAME  = "neo4j"
+NEO4J_PASSWORD  = "..."
 
 # Optional — only needed if Tesseract/Poppler are not on PATH
-TESSERACT_CMD=/path/to/tesseract
-POPPLER_PATH=/path/to/poppler/bin
+# TESSERACT_CMD = "/path/to/tesseract"
+# POPPLER_PATH  = "/path/to/poppler/bin"
 ```
+
+**How secrets are resolved (priority order):**
+1. `st.secrets` — used by the Streamlit app (`msme_app/config.py`)
+2. Environment variables — fallback if `secrets.toml` is absent
+3. `secrets.toml` parsed directly via `tomllib` — used by `utils/seed_graph.py` and `utils/reset_graph.py` (plain Python scripts, no Streamlit context)
+
+**Streamlit Cloud deployment:** paste the same key-value pairs into the app's
+*Settings → Secrets* panel — no file upload needed.
 
 ## Architecture
 
@@ -48,11 +58,15 @@ User input (voice / manual / PDF)
 - `app.py` — dashboard: analytics metrics, MSE/SNP/Category tables with filters
 - `pages/01_Add_MSE.py` — three-tab onboarding form (Voice, Manual, Udyam Certificate)
 
-Both pages create the Neo4j driver once via `@st.cache_resource`:
+Both pages create the Neo4j driver once via `@st.cache_resource`. **`configure_page()` (which calls `st.set_page_config()`) must come before the cached driver call**, otherwise Streamlit raises `set_page_config() can only be called once per app page`:
 ```python
+configure_page()   # st.set_page_config() — must be first
+
 @st.cache_resource
 def _get_driver():
     return get_driver(load_config())
+
+driver = _get_driver()
 ```
 
 ### Services (`msme_app/services/`)

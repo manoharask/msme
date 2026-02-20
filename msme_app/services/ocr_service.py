@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import cv2
 import numpy as np
 import pytesseract
@@ -62,8 +63,28 @@ def _normalize_urn_text(text):
 
 def _configure_tesseract():
     cmd = os.getenv("TESSERACT_CMD")
-    if cmd:
+    if cmd and os.path.exists(cmd):
         pytesseract.pytesseract.tesseract_cmd = cmd
+        return
+
+    detected = shutil.which("tesseract")
+    if detected:
+        pytesseract.pytesseract.tesseract_cmd = detected
+        return
+
+    windows_candidates = [
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ]
+    for candidate in windows_candidates:
+        if os.path.exists(candidate):
+            pytesseract.pytesseract.tesseract_cmd = candidate
+            return
+
+    raise pytesseract.TesseractNotFoundError(
+        "Tesseract OCR not found. Install Tesseract and set TESSERACT_CMD to "
+        "the full path (e.g. C:\\Program Files\\Tesseract-OCR\\tesseract.exe)."
+    )
 
 
 def _clean_text(text):
@@ -241,18 +262,23 @@ def validate_udyam_number(urn):
 
 
 def process_udyam_certificate(file_path):
-    if file_path.lower().endswith(".pdf"):
-        raw_text = extract_text_from_pdf(file_path)
-    else:
-        raw_text = extract_text_from_image(file_path)
+    try:
+        if file_path.lower().endswith(".pdf"):
+            raw_text = extract_text_from_pdf(file_path)
+        else:
+            raw_text = extract_text_from_image(file_path)
 
-    certificate_data = parse_udyam_certificate(raw_text)
-    if certificate_data.get("urn"):
-        certificate_data["urn_validation"] = validate_udyam_number(
-            certificate_data["urn"]
-        )
-    certificate_data["_raw_text"] = raw_text
-    return certificate_data
+        certificate_data = parse_udyam_certificate(raw_text)
+        if certificate_data.get("urn"):
+            certificate_data["urn_validation"] = validate_udyam_number(
+                certificate_data["urn"]
+            )
+        certificate_data["_raw_text"] = raw_text
+        return certificate_data
+    except pytesseract.TesseractNotFoundError as exc:
+        return {"error": str(exc), "success": False}
+    except Exception as exc:
+        return {"error": str(exc), "success": False}
 
 
 def extract_with_llm(raw_text):
@@ -290,6 +316,8 @@ def extract_with_llm(raw_text):
 def process_with_fallback(file_path):
     try:
         result = process_udyam_certificate(file_path)
+        if result.get("error"):
+            return result
         if not result.get("urn"):
             raw_text = result.get("_raw_text", "")
             result = extract_with_llm(raw_text)

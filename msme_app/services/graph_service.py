@@ -100,6 +100,7 @@ def save_mse(
         session.run(
             """
             MERGE (m:MSE {id: $id})
+            ON CREATE SET m.created_at = timestamp()
             SET m += $props
             MERGE (c:Category {code: $cat})
             SET c.name = coalesce(c.name, $cat_name)
@@ -126,24 +127,27 @@ def run_reasoning(driver, mse_id, city):
                 WITH s, c, m,
                      (CASE
                         WHEN toLower(s.city) = toLower(m.city) THEN 1.0
-                        ELSE 0.2 END) AS geo,
+                        ELSE 0.1 END) AS geo,
                      CASE
                         WHEN s.export_capable = true AND (s.rating + 0.05) > 1.0 THEN 1.0
                         WHEN s.export_capable = true THEN s.rating + 0.05
                         ELSE s.rating
                      END AS sla,
                      CASE WHEN s.capacity > 150 THEN 0.9 ELSE 0.5 END AS capacity,
-                     COUNT { (s)-[:SERVES]->(:Category) } * 0.05 AS network,
                      size(coalesce(s.certifications, [])) * 0.02 AS cert_bonus
+                WITH s, c, m, geo, sla, capacity, cert_bonus,
+                     COUNT { (s)-[:SERVES]->(:Category) } AS total_cats
+                WITH s, c, m, geo, sla, capacity, cert_bonus,
+                     CASE WHEN total_cats > 0 THEN 1.0 / total_cats ELSE 1.0 END AS focus
                 RETURN s.id AS snp_id,
-                       s.name AS snp, 
+                       s.name AS snp,
                        s.city AS location,
                        s.certifications AS certifications,
                        s.export_capable AS export_capable,
                        s.specialization AS specialization,
                        s.languages AS languages,
                        s.payment_terms AS payment_terms,
-                       round((geo*0.5 + sla*0.2 + capacity*0.1 + network*0.1 + cert_bonus*0.1)*100) AS score,
+                       round((geo*0.6 + sla*0.15 + capacity*0.10 + focus*0.10 + cert_bonus*0.05)*100) AS score,
                        round(geo*100) AS geo_pct,
                        round(sla*100) AS sla_pct,
                        round(capacity*100) AS cap_pct,
@@ -173,24 +177,23 @@ def fetch_stats(driver):
         ).single()
 
 
-def fetch_recent_mses(driver, limit=10):
-    """Fetch recent MSEs with category information"""
+def fetch_recent_mses(driver, limit=None):
+    """Fetch MSEs ordered newest-first (by created_at); no limit by default."""
     with driver.session() as session:
-        return list(
-            session.run(
-                """
-                MATCH (m:MSE)
-                OPTIONAL MATCH (m)-[:OFFERS]->(c:Category)
-                RETURN m.id AS id,
-                       properties(m) AS props,
-                       c.code AS category_code,
-                       c.name AS category_name
-                ORDER BY m.id DESC
-                LIMIT $limit
-                """,
-                limit=limit,
-            )
-        )
+        query = """
+            MATCH (m:MSE)
+            OPTIONAL MATCH (m)-[:OFFERS]->(c:Category)
+            RETURN m.id AS id,
+                   properties(m) AS props,
+                   c.code AS category_code,
+                   c.name AS category_name
+            ORDER BY coalesce(m.created_at, 0) DESC
+        """
+        params: dict = {}
+        if limit:
+            query += " LIMIT $limit"
+            params["limit"] = limit
+        return list(session.run(query, **params))
 
 
 def fetch_mse_by_id(driver, mse_id):
@@ -324,6 +327,146 @@ def fetch_cities(driver):
             """
         )
         return [row["city"] for row in rows]
+
+
+def fetch_snp_by_id(driver, snp_id):
+    """Fetch a single SNP with all metadata and its category codes"""
+    with driver.session() as session:
+        record = session.run(
+            """
+            MATCH (s:SNP {id: $id})
+            OPTIONAL MATCH (s)-[:SERVES]->(c:Category)
+            WITH s, collect(c.code) AS category_codes
+            RETURN properties(s) AS props, category_codes
+            """,
+            id=snp_id,
+        ).single()
+        if not record:
+            return None
+        props = dict(record["props"])
+        props["category_codes"] = list(record["category_codes"])
+        return props
+
+
+def save_snp(
+    driver,
+    snp_id,
+    name,
+    city,
+    rating,
+    capacity,
+    lat=None,
+    lon=None,
+    certifications=None,
+    export_capable=False,
+    languages=None,
+    payment_terms=None,
+    specialization=None,
+    category_codes=None,
+):
+    """Create or update an SNP node and rebuild its SERVES relationships"""
+    with driver.session() as session:
+        session.run(
+            """
+            MERGE (s:SNP {id: $id})
+            SET s.name           = $name,
+                s.city           = $city,
+                s.rating         = $rating,
+                s.capacity       = $capacity,
+                s.lat            = $lat,
+                s.lon            = $lon,
+                s.certifications = $certifications,
+                s.export_capable = $export_capable,
+                s.languages      = $languages,
+                s.payment_terms  = $payment_terms,
+                s.specialization = $specialization
+            """,
+            id=snp_id,
+            name=name,
+            city=city,
+            rating=rating,
+            capacity=capacity,
+            lat=lat,
+            lon=lon,
+            certifications=certifications or [],
+            export_capable=export_capable,
+            languages=languages or [],
+            payment_terms=payment_terms,
+            specialization=specialization,
+        )
+        # Replace SERVES relationships atomically
+        session.run("MATCH (s:SNP {id: $id})-[r:SERVES]->() DELETE r", id=snp_id)
+        for code in (category_codes or []):
+            session.run(
+                """
+                MATCH (s:SNP {id: $id}), (c:Category {code: $code})
+                MERGE (s)-[:SERVES]->(c)
+                """,
+                id=snp_id,
+                code=code,
+            )
+
+
+def delete_snp(driver, snp_id):
+    """Delete an SNP and all its relationships"""
+    with driver.session() as session:
+        session.run("MATCH (s:SNP {id: $id}) DETACH DELETE s", id=snp_id)
+
+
+def fetch_category_by_id(driver, code):
+    """Fetch a single Category by code"""
+    with driver.session() as session:
+        record = session.run(
+            "MATCH (c:Category {code: $code}) RETURN properties(c) AS props",
+            code=code,
+        ).single()
+        if not record:
+            return None
+        return dict(record["props"])
+
+
+def save_category(driver, code, name, sector, keywords=None,
+                  ondc_l1=None, ondc_l2=None, ondc_l3=None):
+    """Create or update a Category node"""
+    with driver.session() as session:
+        session.run(
+            """
+            MERGE (c:Category {code: $code})
+            SET c.name     = $name,
+                c.sector   = $sector,
+                c.keywords = $keywords,
+                c.ondc_l1  = $ondc_l1,
+                c.ondc_l2  = $ondc_l2,
+                c.ondc_l3  = $ondc_l3
+            """,
+            code=code,
+            name=name,
+            sector=sector,
+            keywords=keywords or [],
+            ondc_l1=ondc_l1,
+            ondc_l2=ondc_l2,
+            ondc_l3=ondc_l3,
+        )
+
+
+def delete_category(driver, code):
+    """
+    Delete a Category if no MSEs currently offer it.
+    Returns (success: bool, message: str).
+    """
+    with driver.session() as session:
+        row = session.run(
+            """
+            MATCH (m:MSE)-[:OFFERS]->(c:Category {code: $code})
+            RETURN count(m) AS mse_count
+            """,
+            code=code,
+        ).single()
+        mse_count = row["mse_count"] if row else 0
+        if mse_count > 0:
+            return False, f"Cannot delete — {mse_count} MSE(s) currently offer this category."
+        session.run("MATCH (c:Category {code: $code}) DETACH DELETE c", code=code)
+        return True, "Category deleted successfully."
 
 
 def fetch_analytics_summary(driver):

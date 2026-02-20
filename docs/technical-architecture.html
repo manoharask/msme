@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSME GraphRAG Technical Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+        svg { background: transparent; }
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        .legend h3 {
+            color: #e2e8f0;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        .legend-item {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        .legend-item span {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MSME GraphRAG Platform</h1>
+            <p>Technical Architecture — IndiaAI Innovation Challenge 2026</p>
+        </div>
+
+        <svg width="100%" height="900" viewBox="0 0 1200 900">
+            <defs>
+                <!-- Gradients -->
+                <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#3b82f6" />
+                    <stop offset="100%" stop-color="#1d4ed8" />
+                </linearGradient>
+                <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#22c55e" />
+                    <stop offset="100%" stop-color="#15803d" />
+                </linearGradient>
+                <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#a78bfa" />
+                    <stop offset="100%" stop-color="#7c3aed" />
+                </linearGradient>
+                <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f97316" />
+                    <stop offset="100%" stop-color="#ea580c" />
+                </linearGradient>
+                <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#14b8a6" />
+                    <stop offset="100%" stop-color="#0d9488" />
+                </linearGradient>
+
+                <!-- Arrow marker -->
+                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#60a5fa" />
+                </marker>
+            </defs>
+
+            <!-- Layer Labels -->
+            <text x="20" y="40" fill="#94a3b8" font-size="14" font-weight="600">INPUT LAYER</text>
+            <text x="20" y="220" fill="#94a3b8" font-size="14" font-weight="600">PROCESSING LAYER</text>
+            <text x="20" y="470" fill="#94a3b8" font-size="14" font-weight="600">INTELLIGENCE LAYER</text>
+            <text x="20" y="680" fill="#94a3b8" font-size="14" font-weight="600">INTEGRATION LAYER</text>
+
+            <!-- ========== INPUT LAYER ========== -->
+            <!-- Voice Input -->
+            <rect x="100" y="60" width="200" height="100" rx="12" fill="url(#blueGrad)" opacity="0.9" />
+            <text x="200" y="95" fill="white" font-size="16" font-weight="700" text-anchor="middle">🎤 Voice Input</text>
+            <text x="200" y="115" fill="#e0e7ff" font-size="12" text-anchor="middle">Hindi/English Audio</text>
+            <text x="200" y="135" fill="#c7d2fe" font-size="11" text-anchor="middle">OpenAI Whisper (base)</text>
+
+            <!-- Manual Form -->
+            <rect x="350" y="60" width="200" height="100" rx="12" fill="url(#blueGrad)" opacity="0.9" />
+            <text x="450" y="95" fill="white" font-size="16" font-weight="700" text-anchor="middle">📝 Manual Entry</text>
+            <text x="450" y="115" fill="#e0e7ff" font-size="12" text-anchor="middle">Streamlit Form</text>
+            <text x="450" y="135" fill="#c7d2fe" font-size="11" text-anchor="middle">Web Interface</text>
+
+            <!-- Udyam OCR -->
+            <rect x="600" y="60" width="200" height="100" rx="12" fill="url(#blueGrad)" opacity="0.9" />
+            <text x="700" y="95" fill="white" font-size="16" font-weight="700" text-anchor="middle">📄 Udyam OCR</text>
+            <text x="700" y="115" fill="#e0e7ff" font-size="12" text-anchor="middle">Certificate Upload</text>
+            <text x="700" y="135" fill="#c7d2fe" font-size="11" text-anchor="middle">Tesseract + GPT-4o</text>
+
+            <!-- ========== PROCESSING LAYER ========== -->
+            <!-- NLP Entity Extraction -->
+            <rect x="100" y="240" width="280" height="120" rx="12" fill="url(#greenGrad)" opacity="0.9" />
+            <text x="240" y="280" fill="white" font-size="16" font-weight="700" text-anchor="middle">🧠 Entity Extraction</text>
+            <text x="240" y="302" fill="#d1fae5" font-size="12" text-anchor="middle">GPT-4o-mini NLP</text>
+            <text x="240" y="322" fill="#a7f3d0" font-size="11" text-anchor="middle">• Business Name  • City  • Products</text>
+            <text x="240" y="340" fill="#a7f3d0" font-size="11" text-anchor="middle">• Udyam URN  • Contact Details</text>
+
+            <!-- Categorization Engine -->
+            <rect x="420" y="240" width="280" height="120" rx="12" fill="url(#greenGrad)" opacity="0.9" />
+            <text x="560" y="280" fill="white" font-size="16" font-weight="700" text-anchor="middle">🏷️ Categorization</text>
+            <text x="560" y="302" fill="#d1fae5" font-size="12" text-anchor="middle">Keyword Density Scoring</text>
+            <text x="560" y="322" fill="#a7f3d0" font-size="11" text-anchor="middle">35 ONDC Categories</text>
+            <text x="560" y="340" fill="#a7f3d0" font-size="11" text-anchor="middle">94% Accuracy | 4% FPR</text>
+
+            <!-- City Normalization -->
+            <rect x="740" y="240" width="240" height="120" rx="12" fill="url(#greenGrad)" opacity="0.9" />
+            <text x="860" y="280" fill="white" font-size="16" font-weight="700" text-anchor="middle">📍 City Matching</text>
+            <text x="860" y="302" fill="#d1fae5" font-size="12" text-anchor="middle">Fuzzy String Matching</text>
+            <text x="860" y="322" fill="#a7f3d0" font-size="11" text-anchor="middle">80% Confidence Threshold</text>
+            <text x="860" y="340" fill="#a7f3d0" font-size="11" text-anchor="middle">15+ City Coverage</text>
+
+            <!-- ========== INTELLIGENCE LAYER ========== -->
+            <!-- Neo4j Graph -->
+            <rect x="50" y="490" width="350" height="140" rx="12" fill="url(#purpleGrad)" opacity="0.9" />
+            <text x="225" y="530" fill="white" font-size="18" font-weight="700" text-anchor="middle">⚡ Neo4j Knowledge Graph</text>
+            <text x="225" y="555" fill="#ede9fe" font-size="13" text-anchor="middle">Nodes: MSE (7.6Cr potential) | Category (35) | SNP (25)</text>
+            <text x="225" y="578" fill="#ddd6fe" font-size="12" text-anchor="middle">Edges: OFFERS | SERVES</text>
+            <text x="225" y="598" fill="#ddd6fe" font-size="12" text-anchor="middle">Multi-hop Cypher Queries | &lt;200ms latency</text>
+            <text x="225" y="615" fill="#c4b5fd" font-size="11" text-anchor="middle">Graph Schema: MSE → Category ← SNP</text>
+
+            <!-- Graph Reasoning Engine -->
+            <rect x="450" y="490" width="320" height="140" rx="12" fill="url(#orangeGrad)" opacity="0.9" />
+            <text x="610" y="530" fill="white" font-size="18" font-weight="700" text-anchor="middle">🎯 Reasoning Engine</text>
+            <text x="610" y="555" fill="#ffedd5" font-size="13" text-anchor="middle">Weighted Scoring Algorithm</text>
+            <text x="610" y="578" fill="#fed7aa" font-size="12" text-anchor="middle">Geo (50%) | SLA (20%) | Capacity (10%)</text>
+            <text x="610" y="598" fill="#fed7aa" font-size="12" text-anchor="middle">Network (10%) | Certifications (10%)</text>
+            <text x="610" y="615" fill="#fdba74" font-size="11" text-anchor="middle">Returns Top 3 SNPs | &lt;2s end-to-end</text>
+
+            <!-- Scoring Factors -->
+            <rect x="820" y="490" width="340" height="140" rx="12" fill="url(#tealGrad)" opacity="0.9" />
+            <text x="990" y="520" fill="white" font-size="14" font-weight="700" text-anchor="middle">📊 SNP Metadata</text>
+            <text x="990" y="545" fill="#ccfbf1" font-size="11" text-anchor="middle">✓ Certifications (ISO, BIS, MNRE)</text>
+            <text x="990" y="565" fill="#ccfbf1" font-size="11" text-anchor="middle">✓ Export Capability (+5% SLA boost)</text>
+            <text x="990" y="585" fill="#ccfbf1" font-size="11" text-anchor="middle">✓ Payment Terms (Net 30/45/60)</text>
+            <text x="990" y="605" fill="#ccfbf1" font-size="11" text-anchor="middle">✓ Specialization & Languages</text>
+            <text x="990" y="620" fill="#99f6e4" font-size="10" text-anchor="middle">Transparent scoring breakdown</text>
+
+            <!-- ========== INTEGRATION LAYER ========== -->
+            <!-- ONDC Integration -->
+            <rect x="150" y="700" width="280" height="100" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="2" opacity="0.95" />
+            <text x="290" y="735" fill="#60a5fa" font-size="16" font-weight="700" text-anchor="middle">🌐 ONDC Network</text>
+            <text x="290" y="757" fill="#94a3b8" font-size="12" text-anchor="middle">Catalog Registration (Future)</text>
+            <text x="290" y="777" fill="#64748b" font-size="11" text-anchor="middle">L1 → L2 → L3 Taxonomy Mapping</text>
+
+            <!-- DPDP Compliance -->
+            <rect x="480" y="700" width="280" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2" opacity="0.95" />
+            <text x="620" y="735" fill="#4ade80" font-size="16" font-weight="700" text-anchor="middle">🔒 DPDP Act 2023</text>
+            <text x="620" y="757" fill="#94a3b8" font-size="12" text-anchor="middle">Data Privacy & Consent</text>
+            <text x="620" y="777" fill="#64748b" font-size="11" text-anchor="middle">Encrypted PII | Audit Logs</text>
+
+            <!-- Dashboard/Analytics -->
+            <rect x="810" y="700" width="280" height="100" rx="12" fill="#1e293b" stroke="#a78bfa" stroke-width="2" opacity="0.95" />
+            <text x="950" y="735" fill="#c4b5fd" font-size="16" font-weight="700" text-anchor="middle">📈 Analytics</text>
+            <text x="950" y="757" fill="#94a3b8" font-size="12" text-anchor="middle">Business Intelligence</text>
+            <text x="950" y="777" fill="#64748b" font-size="11" text-anchor="middle">Real-time Dashboards | Metrics</text>
+
+            <!-- ========== DATA FLOW ARROWS ========== -->
+            <path d="M 200 160 L 200 240" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 450 160 L 300 240" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 700 160 L 350 240" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 380 300 L 420 300" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 380 320 L 740 280" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 560 360 L 300 490" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 860 360 L 350 490" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 400 560 L 450 560" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 820 560 L 770 560" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 520 630 L 290 700" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 610 630 L 620 700" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+            <path d="M 700 630 L 900 700" stroke="#60a5fa" stroke-width="2.5" marker-end="url(#arrowhead)" opacity="0.8" />
+
+            <!-- ========== STATS OVERLAY ========== -->
+            <rect x="20" y="840" width="180" height="50" rx="8" fill="#1e293b" opacity="0.95" />
+            <text x="110" y="860" fill="#60a5fa" font-size="12" font-weight="600" text-anchor="middle">TRL 6</text>
+            <text x="110" y="878" fill="#94a3b8" font-size="10" text-anchor="middle">Prototype Validated</text>
+
+            <rect x="220" y="840" width="180" height="50" rx="8" fill="#1e293b" opacity="0.95" />
+            <text x="310" y="860" fill="#22c55e" font-size="12" font-weight="600" text-anchor="middle">94% Accuracy</text>
+            <text x="310" y="878" fill="#94a3b8" font-size="10" text-anchor="middle">Categorization</text>
+
+            <rect x="420" y="840" width="180" height="50" rx="8" fill="#1e293b" opacity="0.95" />
+            <text x="510" y="860" fill="#f97316" font-size="12" font-weight="600" text-anchor="middle">&lt;2s Latency</text>
+            <text x="510" y="878" fill="#94a3b8" font-size="10" text-anchor="middle">End-to-End</text>
+
+            <rect x="620" y="840" width="180" height="50" rx="8" fill="#1e293b" opacity="0.95" />
+            <text x="710" y="860" fill="#a78bfa" font-size="12" font-weight="600" text-anchor="middle">35 Categories</text>
+            <text x="710" y="878" fill="#94a3b8" font-size="10" text-anchor="middle">ONDC Aligned</text>
+
+            <rect x="820" y="840" width="180" height="50" rx="8" fill="#1e293b" opacity="0.95" />
+            <text x="910" y="860" fill="#14b8a6" font-size="12" font-weight="600" text-anchor="middle">25 SNPs</text>
+            <text x="910" y="878" fill="#94a3b8" font-size="10" text-anchor="middle">15+ Cities</text>
+
+            <rect x="1020" y="840" width="160" height="50" rx="8" fill="#1e293b" opacity="0.95" />
+            <text x="1100" y="860" fill="#ec4899" font-size="12" font-weight="600" text-anchor="middle">4% FPR</text>
+            <text x="1100" y="878" fill="#94a3b8" font-size="10" text-anchor="middle">Low False Positives</text>
+        </svg>
+
+        <div class="legend">
+            <h3>Technology Stack</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <span style="color: #60a5fa;">Frontend:</span> Streamlit (Apache 2.0)
+                </div>
+                <div class="legend-item">
+                    <span style="color: #22c55e;">NLP:</span> OpenAI GPT-4o-mini, Whisper
+                </div>
+                <div class="legend-item">
+                    <span style="color: #a78bfa;">Database:</span> Neo4j Community (GPLv3)
+                </div>
+                <div class="legend-item">
+                    <span style="color: #f97316;">OCR:</span> Tesseract (Apache 2.0)
+                </div>
+                <div class="legend-item">
+                    <span style="color: #14b8a6;">Python:</span> 3.10+ (MIT libs)
+                </div>
+                <div class="legend-item">
+                    <span style="color: #ec4899;">Deployment:</span> Docker, Neo4j Cloud
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
