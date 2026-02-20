@@ -364,18 +364,18 @@ h4 { margin-top: 0.2rem !important; margin-bottom: 0.25rem !important; }
 [data-testid="stVerticalBlock"] > [data-testid="element-container"]:has([data-testid="stMetric"]) {
   margin-bottom: 0.25rem !important;
 }
-/* ── Sidebar — dark nav panel ────────────────────────────── */
+/* ── Sidebar — light nav panel ────────────────────────────── */
 [data-testid="stSidebar"] {
-  background: linear-gradient(180deg,#0f172a 0%,#1a2744 100%) !important;
-  border-right: 1px solid rgba(255,255,255,0.07) !important;
+  background: linear-gradient(180deg,#f8fafc 0%,#edf2fb 100%) !important;
+  border-right: 1px solid #d1dae8 !important;
   min-width: 220px !important;
 }
 [data-testid="stSidebarContent"] { padding: 0 !important; }
 /* Override main button styles for sidebar nav buttons */
 [data-testid="stSidebar"] div[data-testid="stButton"] > button {
-  background:     rgba(255,255,255,0.07) !important;
-  border:         1px solid rgba(255,255,255,0.10) !important;
-  color:          #cbd5e1 !important;
+  background:     rgba(30,64,175,0.06) !important;
+  border:         1px solid rgba(30,64,175,0.12) !important;
+  color:          #1e3a5f !important;
   border-radius:  8px !important;
   font-size:      0.82rem !important;
   font-weight:    600 !important;
@@ -387,12 +387,12 @@ h4 { margin-top: 0.2rem !important; margin-bottom: 0.25rem !important; }
   transition: background .15s, border-color .15s, color .15s !important;
 }
 [data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {
-  background:  rgba(255,255,255,0.13) !important;
-  border-color:rgba(255,255,255,0.22) !important;
-  color:       #ffffff !important;
-  transform:   none !important;
-  filter:      none !important;
-  box-shadow:  none !important;
+  background:   rgba(30,64,175,0.13) !important;
+  border-color: rgba(30,64,175,0.28) !important;
+  color:        #1d4ed8 !important;
+  transform:    none !important;
+  filter:       none !important;
+  box-shadow:   none !important;
 }
 </style>
 """,
@@ -623,11 +623,11 @@ def render_sidebar(current_page="dashboard"):
         # ── Brand block ──────────────────────────────────────
         st.markdown(
             """
-<div style="padding:1.4rem 1.1rem 1rem;border-bottom:1px solid rgba(255,255,255,0.09);">
-  <div style="font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:-0.02em;line-height:1.2;white-space:nowrap;">
+<div style="padding:1.4rem 1.1rem 1rem;border-bottom:1px solid #d1dae8;">
+  <div style="font-size:1.3rem;font-weight:800;color:#0b1221;letter-spacing:-0.02em;line-height:1.2;white-space:nowrap;">
     🎯 Udyam Mitra
   </div>
-  <div style="font-size:0.62rem;color:#93a8c0;margin-top:0.45rem;letter-spacing:0.07em;
+  <div style="font-size:0.62rem;color:#64748b;margin-top:0.45rem;letter-spacing:0.07em;
               text-transform:uppercase;">
     AI&#8209;Powered MSE Discovery
   </div>
@@ -637,7 +637,7 @@ def render_sidebar(current_page="dashboard"):
         # ── Nav section ──────────────────────────────────────
         st.markdown(
             '<div style="font-size:0.58rem;font-weight:700;letter-spacing:0.12em;'
-            'text-transform:uppercase;color:#7090b0;margin:1rem 1.1rem 0.4rem;">Menu</div>',
+            'text-transform:uppercase;color:#64748b;margin:1rem 1.1rem 0.4rem;">Menu</div>',
             unsafe_allow_html=True)
 
         if st.button("🏠  Dashboard", use_container_width=True, key="nav_dash"):
@@ -650,7 +650,7 @@ def render_sidebar(current_page="dashboard"):
         # ── Admin section ─────────────────────────────────────
         st.markdown(
             '<div style="font-size:0.58rem;font-weight:700;letter-spacing:0.12em;'
-            'text-transform:uppercase;color:#7090b0;margin:1rem 1.1rem 0.4rem;">Admin</div>',
+            'text-transform:uppercase;color:#64748b;margin:1rem 1.1rem 0.4rem;">Admin</div>',
             unsafe_allow_html=True)
 
         if st.button("🏢  Manage SNPs", use_container_width=True, key="nav_snps"):
@@ -671,22 +671,22 @@ def render_sidebar(current_page="dashboard"):
         )
         st.markdown(
             f'<div style="display:flex;align-items:center;gap:7px;margin:0.5rem 0.5rem 0;'
-            f'background:rgba(255,255,255,0.06);border-radius:7px;padding:0.3rem 0.75rem;'
+            f'background:rgba(30,64,175,0.07);border-radius:7px;padding:0.3rem 0.75rem;'
             f'border-left:3px solid {active_color};">'
-            f'<span style="font-size:0.68rem;color:#8fa8c4;">Active:</span>'
-            f'<span style="font-size:0.68rem;font-weight:600;color:#e2e8f0;">{active_label}</span>'
+            f'<span style="font-size:0.68rem;color:#64748b;">Active:</span>'
+            f'<span style="font-size:0.68rem;font-weight:600;color:#0b1221;">{active_label}</span>'
             f'</div>',
             unsafe_allow_html=True)
 
         # ── Divider ──────────────────────────────────────────
         st.markdown(
-            '<div style="border-top:1px solid rgba(255,255,255,0.08);margin:1rem 0;"></div>',
+            '<div style="border-top:1px solid #d1dae8;margin:1rem 0;"></div>',
             unsafe_allow_html=True)
 
         # ── Tech stack ───────────────────────────────────────
         st.markdown(
             '<div style="font-size:0.58rem;font-weight:700;letter-spacing:0.12em;'
-            'text-transform:uppercase;color:#7090b0;'
+            'text-transform:uppercase;color:#64748b;'
             'margin:0 0.5rem 0.5rem;padding-left:0.75rem;">Powered By</div>',
             unsafe_allow_html=True)
 
@@ -699,16 +699,16 @@ def render_sidebar(current_page="dashboard"):
         for icon, label in tech:
             st.markdown(
                 f'<div style="display:flex;align-items:center;gap:8px;'
-                f'background:rgba(255,255,255,0.05);border-radius:7px;'
+                f'background:rgba(30,64,175,0.05);border-radius:7px;'
                 f'padding:0.32rem 0.75rem;margin:0 0.5rem 0.3rem;">'
                 f'<span style="font-size:0.9rem;line-height:1;">{icon}</span>'
-                f'<span style="font-size:0.72rem;font-weight:500;color:#b8ccde;">{label}</span>'
+                f'<span style="font-size:0.72rem;font-weight:500;color:#334155;">{label}</span>'
                 f'</div>',
                 unsafe_allow_html=True)
 
         # ── Competition badge ────────────────────────────────
         st.markdown(
-            '<div style="border-top:1px solid rgba(255,255,255,0.08);margin:0.9rem 0 0.7rem;"></div>',
+            '<div style="border-top:1px solid #d1dae8;margin:0.9rem 0 0.7rem;"></div>',
             unsafe_allow_html=True)
         st.markdown(
             """
