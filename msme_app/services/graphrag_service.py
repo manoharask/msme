@@ -2,8 +2,22 @@
 GraphRAG Service — Natural Language → Cypher → Neo4j → Grounded Answer
 Zero hallucination: every answer is derived exclusively from live DB results.
 """
+import os
 import re
+
 import openai
+from openai import OpenAI
+
+_client: OpenAI | None = None
+
+
+def _get_client() -> OpenAI:
+    """Return a cached OpenAI client using the key set by load_config() or the env var."""
+    global _client
+    if _client is None:
+        api_key = openai.api_key or os.getenv("OPENAI_API_KEY")
+        _client = OpenAI(api_key=api_key)
+    return _client
 
 # ── Graph schema description fed to the LLM ─────────────────────────────────
 _SCHEMA = """
@@ -120,7 +134,7 @@ def _clean_cypher(text: str) -> str:
 
 def generate_cypher(question: str) -> str:
     """Convert a natural language question into a Neo4j Cypher query."""
-    response = openai.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": _CYPHER_SYSTEM},
@@ -134,7 +148,7 @@ def generate_cypher(question: str) -> str:
 
 def fix_cypher(cypher: str, error: str, question: str) -> str:
     """Ask the LLM to self-correct a failed Cypher query."""
-    response = openai.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": _CYPHER_SYSTEM},
@@ -164,7 +178,7 @@ def execute_cypher(driver, cypher: str) -> list:
 def format_answer(question: str, results: list) -> str:
     """Turn raw DB results into a grounded natural-language answer."""
     results_text = str(results[:25]) if results else "[]"
-    response = openai.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": _ANSWER_SYSTEM},
