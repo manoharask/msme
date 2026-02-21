@@ -1,15 +1,20 @@
+import os
 import streamlit as st
-import whisper
+from openai import OpenAI
 
 
 @st.cache_resource
 def load_whisper_model():
-    return whisper.load_model("base")
+    """Returns an OpenAI client — kept for API compatibility with callers."""
+    return OpenAI(api_key=st.secrets.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY"))
 
 
-def transcribe_audio(model, audio_path, language=None):
-    if language == "auto" or not language:
-        result = model.transcribe(audio_path)
-    else:
-        result = model.transcribe(audio_path, language=language)
-    return result["text"].strip()
+def transcribe_audio(client, audio_path, language=None):
+    """Transcribe audio using OpenAI Whisper API (cloud-safe, no local model)."""
+    lang = None if (not language or language == "auto") else language
+    with open(audio_path, "rb") as f:
+        kwargs = {"model": "whisper-1", "file": f}
+        if lang:
+            kwargs["language"] = lang
+        result = client.audio.transcriptions.create(**kwargs)
+    return result.text.strip()
